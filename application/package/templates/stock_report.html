@@ -1,0 +1,119 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+
+<div class="container-sm mt-8 px-8 float-end">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h2>Medicine Stock Management</h2>
+    </div>
+    <div class="col-md-4 text-end">
+      <!-- <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addStockModal">
+        <i class="fas fa-plus"></i> Add New Stock
+      </button> -->
+      <a><i id="exportToExcel" style="margin-top: 20px;font-style: normal;" title="Export to excel" onclick="exportTableToExcel('lowStockTable', 'LowStockItems')" class="bi bi-cloud-download btn btn-primary ">   Export To Excel</i></a>
+    </div>
+  </div>
+
+  <!-- Low Stock Section (quantity < 5) -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Low Stock Items</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="lowStockTable" class="table table-hover">
+              <thead>
+                <tr>
+                  <th>S.no</th>
+                  <th>Medicine Name</th>
+                  <th>Quantity</th>
+                  <th>Batch Number</th>
+                  <th>Expiry Date</th>
+                  <th>Purchase Price</th>
+                  <th>Selling Price</th>
+                  <th>Stock Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set counter = 1 %}
+                {% for item in items %}
+                {% if item.quantity < 5 %}
+                <tr>
+                  <td>{{ counter }}</td>
+                  <td>{{item.medicine_name}}</td>
+                  <td>{{item.quantity}}</td>
+                  <td>{{item.batch_number}}</td>
+                  <td>{{item.expiry_date}}</td>
+                  <td>{{item.purchase_price}}</td>
+                  <td>{{item.selling_price}}</td>
+                  <td class="text-center">
+                    {% if item.quantity == 0 %}
+                    <span class="badge rounded-pill bg-danger" title="Out of Stock">Out of Stock</span>
+                    {% else %}
+                    <span class="badge rounded-pill bg-warning" title="Low Stock">Low</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% set counter = counter + 1 %}
+                
+                {% endif %}
+                {% endfor %}
+                {% if not items|selectattr('quantity', 'lt', 5)|list %}
+                <tr>
+                  <td colspan="9" class="text-center">No low stock items found</td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function exportTableToExcel(tableID, filename = '') {
+      var downloadLink;
+      var dataType = 'application/vnd.ms-excel';
+      var tableSelect = document.getElementById(tableID);
+      
+      if (!tableSelect) {
+          console.error('Table with ID "' + tableID + '" not found');
+          return;
+      }
+      
+      var tableHTML = encodeURIComponent(tableSelect.outerHTML);
+
+      // Specify file name
+      filename = filename ? filename + '.xls' : 'excel_data.xls';
+
+      // Create download link element
+      downloadLink = document.createElement("a");
+
+      document.body.appendChild(downloadLink);
+
+      if (navigator.msSaveOrOpenBlob) {
+          var blob = new Blob(['\ufeff', tableHTML], {
+              type: dataType
+          });
+          navigator.msSaveOrOpenBlob(blob, filename);
+      } else {
+          // Create a link to the file
+          downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+
+          // Setting the file name
+          downloadLink.download = filename;
+
+          // Triggering the function
+          downloadLink.click();
+      }
+
+      // Cleanup
+      document.body.removeChild(downloadLink);
+  }
+</script>
+{% endblock %}

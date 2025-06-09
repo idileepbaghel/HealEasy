@@ -1,0 +1,264 @@
+{% extends "dashboard.html" %}
+
+{% block title %}Medicines{% endblock %}
+
+{% block content %}
+
+<div class="container-sm mt-8 px-8">
+    <div class="row">
+        <div class="col-lg-12 offset-lg-1">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" class="bi bi-x-lg"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                    </svg></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <div class="table_heading d-flex justify-content-between">
+                <h3 class="text-secondary">Pharmacy Medicines</h3>
+                <div>
+                    <a href="{{ url_for('pharm_name.select_master_medicines') }}" class="btn btn-secondary me-2">
+                        Add from Master Medicines
+                    </a>
+                    <button type="button" class="btn bg-gradient-primary" data-bs-toggle="modal"
+                        data-bs-target="#addmednames">
+                        Add Medicine
+                    </button>
+                </div>
+            </div>
+
+            <table id="med" style="width: 100%;" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>S.no</th>
+                        <th>Medicine Name</th>
+                        <th>Generic Name</th>
+                        <th>Composition</th>
+                        <th>Strength</th>
+                        <th>Medicine Type</th>
+                        <th>Medicine Unit</th>
+                        <th>Manufacturer</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{item.medicine_name}}</td>
+                        <td>{{item.generic_name}}</td>
+                        <td>{{item.composition}}</td>
+                        <td>{{item.strength}}</td>
+                        <td>{{item.type_name}}</td>
+                        <td>{{item.unit_short_name}}</td>
+                        <td>{{item.manufacturer_name}}</td>
+                        <td>
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#editmednames{{item.id}}">
+                                <i class="bi bi-pencil-square mx-3"></i>
+                            </a>
+
+                            <div class="modal fade" id="editmednames{{item.id}}" tabindex="-1"
+                                aria-labelledby="editmednames{{item.id}}" aria-hidden="true">
+                                <div
+                                    class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+                                    <div class="modal-content border-0 shadow w-50">
+                                        <div class="modal-header form-header">
+                                            <h5 class="modal-title" id="editmednames{{item.id}}">Edit Medicine Details
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white"
+                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form action="{{ url_for('pharm_name.edit_mednames', id=item.id) }}"
+                                                method="POST">
+
+                                                <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
+
+                                                <div class="row">
+                                                    <div class="mb-3 col-md-6">
+                                                        <label for="type" class="form-label">Medicine Name<span
+                                                                style="color: red;">*</span></label>
+                                                        <input type="text" class="form-control" id="type"
+                                                            name="medicine_name" value="{{item.medicine_name}}"
+                                                            required>
+                                                    </div>
+
+                                                    <div class="mb-3 col-md-6">
+                                                        <label for="description" class="form-label">Generic Name</label>
+                                                        <input class="form-control" id="input" name="genericname"
+                                                            value="{{item.generic_name}}">
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label for="description" class="form-label">Composition</label>
+                                                    <input class="form-control" type="text" id="input"
+                                                        name="composition" value="{{item.composition}}">
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="mb-3 col-md-6">
+                                                        <label for="description" class="form-label">Medicine Type<span
+                                                                style="color: red;">*</span></label>
+                                                        <select class="form-select" name="type_id" id="type_id">
+                                                            <option value="{{item.type_id}}">{{item.type_name}}</option>
+                                                            {% for type in med_types %}
+                                                            {% if type.id != item.type_id %}
+                                                            <option value="{{type.id}}">{{ type.type_name }}</option>
+                                                            {% endif %}
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3 col-md-6">
+                                                        <label for="description" class="form-label">Medicine Unit<span
+                                                                style="color: red;">*</span></label>
+                                                        <select class="form-select" name="unit_id" id="unit_id">
+                                                            <option value="{{ item.unit_id }}">{{ item.unit_short_name
+                                                                }}</option>
+                                                            {% for unit in med_units %}
+                                                            {% if unit.id != item.unit_id %}
+                                                            <option value="{{unit.id}}">{{ unit.unit_short_name }}
+                                                            </option>
+                                                            {% endif %}
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label for="description" class="form-label">Strength</label>
+                                                    <input class="form-control" type="number" id="input" name="strenght"
+                                                        value="{{item.strength}}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="description" class="form-label">Manufacturer<span
+                                                            style="color: red;">*</span></label>
+                                                    <select class="form-select" name="manufacturer_id"
+                                                        id="manufacturer_id">
+                                                        <option value="{{ item.manufacturer_id }}">{{
+                                                            item.manufacturer_name }}</option>
+                                                        {% for manufacturer in manu %}
+                                                        {% if manufacturer.id != item.manufacturer_id %}
+                                                        <option value="{{manufacturer.id}}">{{
+                                                            manufacturer.manufacturer_name }}</option>
+                                                        {% endif %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <div class="text-end">
+                                                    <button type="submit"
+                                                        class="btn bg-gradient-primary">Submit</button>
+                                                    <button type="button" class="btn btn-secondary me-2"
+                                                        data-bs-dismiss="modal">Cancel</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <a href="{{ url_for('pharm_name.delete_mednames', id=item.id, medicine_name=item.medicine_name) }}"
+                                onclick="return confirm('Are you sure you want to delete {{ item.medicine_name }}?');">
+                                <i class="bi bi-trash-fill mx-3"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addmednames" tabindex="-1" aria-labelledby="addmednames" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+        <div class="modal-content border-0 shadow w-50">
+            <div class="modal-header form-header">
+                <h5 class="modal-title" id="addmednames">Add Medicine Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('pharm_name.add_medicine') }}" method="POST">
+
+                    <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <label for="type" class="form-label">Medicine Name<span style="color: red;">*</span></label>
+                            <input type="text" class="form-control" id="type" name="medsname"
+                                placeholder="Enter Medicine name" required>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="description" class="form-label">Generic Name</label>
+                            <input class="form-control" id="input" name="genericname" placeholder="Enter Generic Name">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Composition</label>
+                        <input class="form-control" id="input" name="composition" placeholder="Enter Composition">
+                    </div>
+
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <label for="description" class="form-label">Medicine Type<span
+                                    style="color: red;">*</span></label>
+                            <select class="form-select" name="type_id" id="type_id" required>
+                                <option value="">Select Type</option>
+                                {% for type in med_types %}
+                                <option value="{{type.id}}">{{ type.type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <label for="description" class="form-label">Medicine Unit<span
+                                    style="color: red;">*</span></label>
+                            <select class="form-select" name="unit_id" id="unit_id" required>
+                                <option value="">Select Unit</option>
+                                {% for unit in med_units %}
+                                <option value="{{unit.id}}">{{ unit.unit_short_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Strength</label>
+                        <input class="form-control" id="input" type="number" name="strenght" placeholder="Enter Strength">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Manufacturer<span
+                                style="color: red;">*</span></label>
+                        <select class="form-select" name="manufacturer_id" id="manufacturer_id" required>
+                            <option value="">Select Manufacturer</option>
+                            {% for manufacturer in manu %}
+                            <option value="{{manufacturer.id}}">{{ manufacturer.manufacturer_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn bg-gradient-primary">Submit</button>
+                        <button type="button" class="btn bg-gradient-secondary me-2"
+                            data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

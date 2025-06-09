@@ -1,0 +1,261 @@
+<!-- pharmacy_users.html -->
+{% extends "dashboard.html" %}
+
+{% block title %}Pharmacy Users
+<!-- Add this CSS to your stylesheet or in a style tag in the head -->
+<style>
+    /* Ensure content stays within the main area */
+    .content-wrapper {
+      padding: 20px;
+      margin-left: 250px; /* Adjust based on your sidebar width */
+      width: calc(100% - 250px); /* Full width minus sidebar */
+      overflow-x: hidden; /* Prevent horizontal scrolling */
+    }
+    
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+      .content-wrapper {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+  
+    /* Style for modal headers */
+    .form-header {
+      background-color: #4e248d; /* Purple color from your screenshot */
+      color: white;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper"> 
+<div  class="container py-5 mt-8">
+    <div   class="row">
+      <div class="col-lg-10 offset-lg-2">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <!-- Add user button -->
+        <div class="d-flex justify-content-between">
+          <h3 class="text-secondary">Pharmacy Users</h3>
+          <button type="button" class="btn bg-gradient-primary " data-bs-toggle="modal" data-bs-target="#addUserModal">
+            Add User
+          </button>
+        </div>
+
+        
+
+        <!-- Data Table -->
+        <table id="med" class="table table-striped" >
+          <thead>
+            <tr>
+              <th style="text-align: left;">S.no</th>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Mobile</th>
+              <th>Pharmacy Name</th>
+              <th>User Role</th>
+              <th>Type Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in item %}
+            <tr>
+              <td style="text-align: left;">{{ loop.index }}</td>
+              <td>{{ item.full_name }}</td>
+              <td>{{ item.username }}</td>
+              <td>{{ item.email }}</td>
+              <td>{{ item.mobile }}</td>
+              <td>{{ item.pharmacy_name }}</td>
+              <td>{{ item.user_role }}</td>
+              <td>{{ item.user_type }}</td>
+              <td>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#editUser{{item.id}}">
+                  <i class="bi bi-pencil-square mx-3"></i>
+                </a>
+
+                <a href="{{ url_for('users_bp.delete_user', id=item.id) }}" onclick="return confirm('Are you sure you want to delete this user?');">
+                  <i class="bi bi-trash-fill"></i>
+                </a>
+
+                <!--Edit User Details -->
+                <div class="modal fade" id="editUser{{item.id}}" tabindex="-1" aria-labelledby="editUser"
+                  aria-hidden="true">
+                  <div
+                    class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+                    <div class="modal-content border-0 shadow w-50">
+                      <div class="modal-header form-header">
+                        <h5 class="modal-title" id="editUser">Edit User Details</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                          aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <form action="{{ url_for('users_bp.edit_user', id=item.id) }}" method="POST">
+                          <div class="row">
+                            <div class="mb-3 col-md-6">
+                              <label for="pharmacy_id" class="form-label">Pharmacy Name</label>
+                              <select class="form-select" id="pharmacy_id" name="pharmacy_id" required>
+                                {% for pharmacy in pharmacies %}
+                                <option value="{{ pharmacy.id }}" {% if pharmacy.id == item.pharmacy_id %}selected{% endif %}>
+                                  {{ pharmacy.pharmacy_name }}
+                                </option>
+                                {% endfor %}
+                              </select>
+                            </div>
+                            
+                            <div class="mb-3 col-md-6">
+                              <label for="role" class="form-label">User Role</label>
+                              <select class="form-select" id="role" name="user_role" required>
+                                <option value="admin" {% if item.role == 'admin' %}selected{% endif %}>Admin</option>
+                                <option value="pharmacist" {% if item.role == 'pharmacist' %}selected{% endif %}>Pharmacist</option>
+                                <option value="staff" {% if item.role == 'staff' %}selected{% endif %}>Staff</option>
+                              </select>
+                            </div>
+                          </div>
+
+                            <div class="mb-3 col-md-6">
+                              <label for="role" class="form-label">Type Role</label>
+                              <select class="form-select" id="role" name="user_type" required>
+                                <option value="admin" {% if item.role == 'admin' %}selected{% endif %}>Administration</option>
+                                <option value="pharmacist" {% if item.role == 'pharmacist' %}selected{% endif %}>Non-Administration</option>
+                              </select>
+                            </div>
+                          
+                            <div class="mb-3">
+                              <label for="first_name" class="form-label">Name</label>
+                              <input type="text" class="form-control" id="first_name" name="full_name" value="{{ item.full_name }}"
+                                required>
+                            </div>
+                          
+                          <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" value="{{ item.username }}"
+                              required>
+                          </div>
+                          
+                          <!-- Password field removed as requested -->
+                          
+                          <div class="row">
+                            <div class="mb-3 col-md-6">
+                              <label for="email" class="form-label">Email</label>
+                              <input type="email" class="form-control" id="email" name="email" value="{{ item.email }}"
+                                required>
+                            </div>
+                            
+                            <div class="mb-3 col-md-6">
+                              <label for="phone" class="form-label">Phone</label>
+                              <input type="number" maxlength="10" class="form-control" id="phone" name="mobile" value="{{ item.mobile }}">
+                            </div>
+                          </div>
+                          
+                          <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                          </div>
+                        
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <!--Add User Modal -->
+        <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModal"
+          aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+            <div class="modal-content border-0 shadow w-50">
+              <div class="modal-header form-header">
+                <h5 class="modal-title" id="addUserModal">Add User Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form action="{{ url_for('users_bp.addusers') }}" method="POST">
+                  
+                    <div class="mb-3">
+                      <label for="pharmacy_id" class="form-label">Pharmacy Name</label>
+                      <select class="form-select" id="pharmacy_id" name="pharmacy_id" required>
+                        <option value="">Select</option>
+                        {% for pharmacy in pharm_name %}
+                        <option value="{{ pharmacy.id }}">{{ pharmacy.pharmacy_name }}
+                        </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="row">
+                    <div class="mb-3 col-md-6">
+                      <label for="role" class="form-label">User Role</label>
+                      <select class="form-select" id="role" name="user_role" required>
+                        <option value="admin" {% if item.role == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="pharmacist" {% if item.role == 'pharmacist' %}selected{% endif %}>Pharmacist</option>
+                        <option value="staff" {% if item.role == 'staff' %}selected{% endif %}>Staff</option>
+                      </select>
+                    </div>
+                  
+
+                    <div class="mb-3 col-md-6">
+                      <label for="role" class="form-label">Type Role</label>
+                      <select class="form-select" id="role" name="user_type" required>
+                        <option value="admin" {% if item.role == 'admin' %}selected{% endif %}>Administration</option>
+                        <option value="pharmacist" {% if item.role == 'pharmacist' %}selected{% endif %}>Non-Administration</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                    <div class="mb-3">
+                      <label for="first_name" class="form-label">Name</label>
+                      <input type="text" class="form-control" id="first_name" name="full_name" placeholder="Enter Full Name"
+                        required>
+                    </div>
+                  
+                  <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter Username"
+                      required>
+                  </div>
+                  
+                  
+                  <div class="row">
+                    <div class="mb-3 col-md-6">
+                      <label for="email" class="form-label">Email</label>
+                      <input type="email" class="form-control" id="email" name="email" placeholder="Enter Email"
+                        required>
+                    </div>
+                    
+                    <div class="mb-3 col-md-6">
+                      <label for="phone" class="form-label">Phone</label>
+                      <input type="number" maxlength="10" class="form-control" id="phone" name="mobile" placeholder="Enter Mobile Number">
+                    </div>
+                  </div>
+                  
+                  <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+</div>
+{% endblock %}

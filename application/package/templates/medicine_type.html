@@ -1,0 +1,146 @@
+<!-- about.html -->
+{% extends "dashboard.html" %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+
+<div class="container py-5 mt-6">
+    <div class="row">
+      <div class="col-lg-10 offset-lg-2">
+        <!-- Add medicine button -->
+        
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" class="bi bi-x-lg" viewBox="0 0 16 16">
+            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+          </svg></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="table_heading d-flex justify-content-between">
+            <h3 class="text-secondary">Medicine Types</h3>
+        
+            <button type="button" class="btn bg-gradient-primary my-2 " data-bs-toggle="modal"
+          data-bs-target="#addMedicineModalLabel">
+          Add Medicines Type
+        </button>
+        </div>
+        
+
+        <!-- Data Table -->
+        <table id="med" class="table table-striped" style="width:100%;">
+          <thead>
+            <tr>
+              <th style="text-align: left;">S.no</th>
+              <th>Type of Medicines</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in data %}
+            <tr>
+              <td style="text-align: left;">{{ loop.index }}</td>
+              <td>{{ item.type_name }}</td>
+              <td>{{ item.description }}</td>
+              <td>
+                <a href="{{ url_for('edit_bp.edit', id=item.id) }}" data-bs-toggle="modal"
+                  data-bs-target="#editMeds{{item.id}}">
+                  <i class="bi bi-pencil-square mx-3"></i>
+                  
+                </a>
+
+                <!--Edit Medicine Details -->
+                <div class="modal fade" id="editMeds{{item.id}}" tabindex="-1" aria-labelledby="editMeds"
+                  aria-hidden="true">
+                  <div
+                    class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+                    <div class="modal-content border-0 shadow w-50">
+                      <div class="modal-header form-header">
+                        <h5 class="modal-title" id="editMeds">Edit Medicine Details</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                          aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <form action="{{ url_for('edit_bp.edit', id=item.id, type_name=item.type_name) }}" method="POST">
+                          <div>
+                            <div>
+                              <label for="type" class="form-label">Type of Medicine<span style="color: red;">*</span></label>
+                              <input type="text" class="form-control" id="type" name="type" value="{{ item.type_name }}"
+                                required>
+                            </div>
+                          </div>
+
+                          <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+
+                            <textarea class="form-control" id="description" name="description"
+                              rows="3">{{ item.description }}</textarea>
+                          </div>
+                          <div class="text-end">
+                            <button type="submit" class="btn bg-gradient-primary">Save Changes</button>
+                            <button type="button" class="btn bg-gradient-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+
+                <a href="{{ url_for('delete_bp.delete', id=item.id, type_name=item.type_name) }}"
+                  onclick="return confirm('Are you sure you want to delete {{ item.type_name }}?');">
+                  <i class="bi bi-trash-fill mx-3"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+    </div>
+</div>
+</div>
+
+        <!--Add Medicine Details -->
+        <div class="modal fade" id="addMedicineModalLabel" tabindex="-1" aria-labelledby="addMedicineModalLabel"
+          aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+            <div class="modal-content border-0 shadow w-50">
+              <div class="modal-header form-header">
+                <h5 class="modal-title" id="addMedicineModalLabel">Add Medicine</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form action="{{ url_for('medicine_bp.medicine') }}" method="POST">
+                  <div class="row">
+                    
+                    <div class="mb-3 col-md-12">
+                      <label for="type" class="form-label">Type of Medicine<span style="color: red;">*</span></label>
+                      <input type="text" class="form-control" id="type" name="type" placeholder="Enter Medicine type" required>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" placeholder="Enter Description" rows="3"></textarea>
+                  </div>
+                  <div class="text-end">
+                    <button type="submit" class="btn bg-gradient-primary">Submit</button>
+                    <button type="button" class="btn bg-gradient-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+{% endblock %}

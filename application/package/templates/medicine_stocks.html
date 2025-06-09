@@ -1,0 +1,281 @@
+{% extends "dashboard.html" %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+
+<div class="container-sm mt-8 px-8">
+  <div class="row">
+    <div class="col-lg-12 offset-lg-1">
+
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><svg
+            xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" class="bi bi-x-lg"
+            viewBox="0 0 16 16">
+            <path
+              d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+          </svg></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+
+      <div class="table_heading d-flex justify-content-between">
+        <h3 class="text-secondary">Medicine Stocks</h3>
+        <button type="button" class="btn bg-gradient-primary" data-bs-toggle="modal" data-bs-target="#addmednames">
+          Add Medicine Stocks
+        </button>
+      </div>
+
+      <table id="med" class="table table-sm table-striped table-bordered align-middle text-nowrap small">
+        <thead>
+          <tr>
+            <th>S.no</th>
+            <th>Medicine Name</th>
+            <th>Quantity</th>
+            <th>Batch Number</th>
+            <th>Expiry Date</th>
+            <th>Purchase Price</th>
+            <th>Selling Price</th>
+            <th>Stock Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{item.medicine_name}}</td>
+            <td>{{item.quantity}}</td>
+            <td>{{item.batch_number}}</td>
+            <td>{{item.expiry_date}}</td>
+            <td>{{item.purchase_price}}</td>
+            <td>{{item.selling_price}}</td>
+            <td class="text-center">
+              {% if item.quantity == 0 %}
+              <span class="badge rounded-pill bg-danger" title="Low Stock">Low</span>
+              {% elif item.quantity < 6 %}
+              <span class="badge rounded-pill bg-warning" title="Medium Stock">Medium</span>
+              {% else %}
+              <span class="badge rounded-pill bg-success" title="Good Stock">Good</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('medstock.editmedstock', id=item.id) }}" data-bs-toggle="modal"
+                data-bs-target="#editmedstock{{item.id}}">
+                <i class="bi bi-pencil-square mx-3"></i>
+              </a>
+
+              <div class="modal fade" id="editmedstock{{item.id}}" tabindex="-1" aria-labelledby="editmedstock{{item.id}}" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+                  <div class="modal-content border-0 shadow w-50">
+                    <div class="modal-header form-header">
+                      <h5 class="modal-title" id="editmedstock{{item.id}}">Edit Medicine Stock</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form action="{{ url_for('medstock.editmedstock', id=item.id) }}" method="POST">
+              
+                        <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
+              
+                          <div class="medname">
+                            <label for="description" class="form-label">Medicine Name<span style="color: red;">*</span></label>
+                            <select class="form-select" name="medicine_id" id="type_id">
+                              <option value="{{item.medicine_id}}">{{item.medicine_name}}</option>
+                              {% for med in med_names %}
+                              {%if med.id != item.pharmacy_medicine_id %}
+                              <option value="{{med.id}}">{{ med.medicine_name }}</option>
+                              {%endif%}
+                              {% endfor %}
+                            </select>
+                          </div>
+                        </div>
+              
+                        <div class="mb-3 px-3">
+                          <label for="description" class="form-label">Quantity</label>
+                          <input type="number" class="form-control" id="input" name="quantity" value="{{item.quantity}}" rows="3">
+                        </div>
+              
+                        <div class="row px-3">
+                          <div class="mb-3 col-md-6">
+                            <label for="description" class="form-label">Batch Number</label>
+                            <input class="form-control" id="input" name="batch_number" value="{{item.batch_number}}" rows="3">
+                          </div>
+              
+                          <div class="mb-3 col-md-6">
+                            <label for="expiry" class="form-label">Expiry Date<span style="color: red;">*</span></label>
+                            <input class="form-control" type="date" id="date" name="expiry_date" value="{{item.expiry_date}}"
+                              min="<?php echo date('Y-m-d'); ?>" onchange="validateDate(this)"></input>
+                          </div>
+                        </div>
+              
+              
+                        <div class="mb-3 px-3">
+                          <label for="description" class="form-label">Puchase Price (in ₹)<span style="color: red;">*</span></label>
+                          <input class="form-control" id="input" name="purchase_price" value="{{item.purchase_price}}"
+                            rows="3"></input>
+                        </div>
+              
+                        <div class="mb-3 px-3">
+                          <label for="description" class="form-label">Selling Price (in ₹)<span style="color: red;">*</span></label>
+                          <input class="form-control" id="input" name="selling_price" value="{{item.selling_price}}"
+                            rows="3"></input>
+                        </div>
+              
+                        <div class="text-end">
+                          <button type="submit" class="btn bg-gradient-primary">Submit</button>
+                          <button type="button" class="btn bg-gradient-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <a href="{{ url_for('medstock.stockdelete', id=item.id) }}"
+                onclick="return confirm('Are you sure you want to delete {{ item.medicine_name }}?');">
+                <i class="bi bi-trash-fill mx-3"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+<div class="modal fade" id="addmednames" tabindex="-1" aria-labelledby="addmednames" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+    <div class="modal-content border-0 shadow w-50">
+      <div class="modal-header form-header  ">
+        <h5 class="modal-title" id="addmednames">Add Medicine Stocks</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{{ url_for('medstock.addmedstock') }}" method="POST">
+
+          <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
+
+            <div class="medname">
+              <label for="description" class="form-label">Medicine Name<span style="color: red;">*</span></label>
+              <select class="form-select" name="medicine_id" id="type_id">
+                <option value="">select</option>
+                {% for med in med_names %}
+                <option value="{{med.id}}">{{ med.medicine_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3 px-3">
+            <label for="description" class="form-label">Quantity<span style="color: red;">*</span></label>
+            <input type="number" class="form-control" id="input" name="quantity" placeholder="Enter Quantity" rows="3">
+          </div>
+
+          <div class="row px-3">
+            <div class="mb-3 col-md-6">
+              <label for="description" class="form-label">Batch Number</label>
+              <input class="form-control" id="input" name="batch_number" placeholder="Enter Batch Number" rows="3">
+            </div>
+
+            <div class="mb-3 col-md-6">
+              <label for="expiry" class="form-label">Expiry Date<span style="color: red;">*</span></label>
+              <input class="form-control" type="date" id="date" name="expiry_date" placeholder="Enter Expiry Date"
+                min="<?php echo date('Y-m-d'); ?>" onchange="validateDate(this)"></input>
+            </div>
+          </div>
+
+
+          <div class="mb-3 px-3">
+            <label for="description" class="form-label">Puchase Price (in ₹)<span style="color: red;">*</span></label>
+            <input class="form-control" id="input" name="purchase_price" placeholder="Enter Purchase Price"
+              rows="3"></input>
+          </div>
+
+          <div class="mb-3 px-3">
+            <label for="description" class="form-label">Selling Price (in ₹)<span style="color: red;">*</span></label>
+            <input class="form-control" id="input" name="selling_price" placeholder="Enter Selling Price"
+              rows="3"></input>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn bg-gradient-primary">Submit</button>
+            <button type="button" class="btn bg-gradient-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  // Set min date to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('date').setAttribute('min', today);
+
+  function validateDate(input) {
+    const selectedDate = new Date(input.value);
+    const today = new Date();
+
+    // Reset time portion for accurate date comparison
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      alert("Please select a future date for expiry");
+      input.value = ''; // Clear invalid input
+    }
+  }
+</script>
+
+<script>
+    function setMinDate() {
+        const today = new Date();
+        today.setDate(today.getDate() + 1); // Set to tomorrow
+        
+        // Format date as YYYY-MM-DD
+        const tomorrow = today.toISOString().split('T')[0];
+        
+        // Get all date input fields
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        
+        dateInputs.forEach(input => {
+            // Set minimum date to tomorrow
+            input.setAttribute('min', tomorrow);
+            
+            // Add event listener to validate on change
+            input.addEventListener('change', function(e) {
+                const selectedDate = new Date(this.value);
+                const currentDate = new Date();
+                
+                // Reset time part for accurate date comparison
+                selectedDate.setHours(0, 0, 0, 0);
+                currentDate.setHours(0, 0, 0, 0);
+                
+                if (selectedDate <= currentDate) {
+                    alert('Please select a future date for expiry');
+                    this.value = ''; // Clear invalid date
+                }
+            });
+        });
+    }
+
+    // Call function when document loads
+    document.addEventListener('DOMContentLoaded', setMinDate);
+</script>
+
+{% endblock %}

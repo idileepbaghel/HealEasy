@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Medicine Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link id="pagestyle" href="soft-ui-dashboard-main/css/soft-ui-dashboard.css?v=1.1.0" rel="stylesheet" />
+    <style>
+        body {
+            background-color: white;
+        }
+
+        .form-card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(120, 119, 119, 0.789);
+        }
+
+        .form-header {
+            background: linear-gradient(to right, #292929, #707070);
+            color: white;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container position-sticky z-index-sticky top-0">
+        <div class="row">
+            <div class="col-12">
+                <nav
+                    class="navbar navbar-expand-lg blur blur-rounded top-0 z-index-3 shadow my-3 py-2 start-0 end-0 mx-4">
+                    <div class="container-fluid pe-0">
+                        <a class="navbar-brand font-weight-bolder ms-lg-0 ms-3"
+                            href="{{ url_for('auth_bp.dashboard') }}">
+                            HealEasy
+                        </a>
+                        <button class="navbar-toggler shadow-none ms-2" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#navigation" aria-controls="navigation" aria-expanded="false"
+                            aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon mt-2">
+                                <span class="navbar-toggler-bar bar1"></span>
+                                <span class="navbar-toggler-bar bar2"></span>
+                                <span class="navbar-toggler-bar bar3"></span>
+                            </span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navigation">
+                            <ul class="navbar-nav mx-auto ms-xl-auto me-xl-7">
+                                <li class="nav-item">
+                                    <a class="nav-link d-flex align-items-center me-2 active" aria-current="page"
+                                        href="{{ url_for('auth_bp.dashboard') }}">
+                                        <i class="fa fa-chart-pie opacity-6 text-dark me-1"></i>
+                                        Dashboard
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link me-2" href="../pages/profile.html">
+                                        <i class="fa fa-user opacity-6 text-dark me-1"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link me-2" href="{{ url_for('auth_bp.login') }}">
+                                        <i class="fas fa-user-circle opacity-6 text-dark me-1"></i>
+                                        Sign Up
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link me-2" href="{{ url_for('auth_bp.login') }}">
+                                        <i class="fas fa-key opacity-6 text-dark me-1"></i>
+                                        Sign In
+                                    </a>
+                                </li>
+                            </ul>
+
+                        </div>
+                    </div>
+                </nav>
+
+
+
+                <div class="container py-5 mt-3">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8 col-lg-6">
+                            <div class="card form-card">
+                                <div class="card-header form-header text-center py-3">
+                                    <h4 class="mb-0 text-white">Medicine Details</h4>
+                                </div>
+                                <div class="card-body px-4 py-4">
+                                    <form action="{{ url_for('medicine_bp.medicine') }}" method="POST">
+                                        <div class="mb-3">
+                                            <label for="name" class="form-label">Medicine Name</label>
+                                            <input type="text" class="form-control" id="name" name="name" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="type" class="form-label">Type of Medicine</label>
+                                            <input type="text" class="form-control" id="type" name="type" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="description" class="form-label">Description</label>
+                                            <textarea class="form-control" id="description" name="description"
+                                                rows="3"></textarea>
+                                        </div>
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-success btn-lg">Submit</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

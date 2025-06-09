@@ -1,0 +1,126 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="container-fluid mt-9">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x"
+                viewBox="0 0 16 16">
+                <path
+                    d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+            </svg></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    <div class="row">
+        <div class="col-md-2">
+
+        </div>
+        <div class="col-md-10 px-5">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center pb-0">
+                    <h6>Expiring Medicines Report</h6>
+                    <button class="btn bg-gradient-primary" onclick="exportExpiredMedicines()" {% if not medicines
+                        %}disabled{% endif %}>
+                        <i class="fas fa-download me-2"></i>Download Report
+                    </button>
+                </div>
+                <div class="card-body px-3 pt-0 pb-2">
+                    <div class="table-responsive p-0">
+                        <table id="tasksTable" class="table table-sm table-striped align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Medicine Name</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Batch Number</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Quantity</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Expiry Date</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Days Until Expiry</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for med in medicines %}
+                                <tr>
+                                    <td>{{ med.medicine_name }}</td>
+                                    <td>{{ med.batch_number }}</td>
+                                    <td>{{ med.quantity }}</td>
+                                    <td>{{ med.expiry_date }}</td>
+                                    <td>{{ med.days_until_expiry }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#expiry-report').DataTable({
+            "order": [[4, "asc"]], // Sort by days until expiry by default
+            "pageLength": 25,
+            "initComplete": function (settings, json) {
+                // Check if table is empty after initialization
+                let rowCount = table.rows().count();
+                $('#downloadBtn').prop('disabled', rowCount === 0);
+            }
+        });
+    });
+
+    function exportExpiredMedicines() {
+        window.location.href = "{{ url_for('expiry_report.download_report') }}";
+    }
+</script>
+
+<!-- DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#tasksTable').DataTable({
+        responsive: true,
+        pageLength: 10,
+        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+        order: [[0, 'asc']],
+        language: {
+           search: "_INPUT_",
+            searchPlaceholder: "Search records",
+            lengthMenu: '<span class="px-3">Show _MENU_ entries</span>',
+            info: '<span class="px-2">Showing _START_ to _END_ of _TOTAL_ entries</span>',
+            paginate: {
+                first: '<span class="px-2"><<</span>',
+                last: '<span class="px-2">>></span>',
+                next: '<span class="px-2"><</span>',
+                previous: '<span class="px-2">></span>'
+            }
+        },
+        dom: '<"row"<"col-md-6"l><"col-md-6 text-end"f>>' +
+             '<"row"<"col-sm-12"tr>>' +
+             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        buttons: [
+            'copy', 'csv', 'excel', 'pdf', 'print'
+        ],
+        columnDefs: [
+            {
+                targets: -1,
+                orderable: false,
+                searchable: false
+            }
+        ]
+    });
+});
+</script>
+
+{% endblock %}

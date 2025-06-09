@@ -1,0 +1,214 @@
+{% extends "dashboard.html" %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+
+<div class="container-sm mt-8 px-8">
+  <div class="row">
+    <div class="col-lg-12 offset-lg-1">
+
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><svg
+            xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" class="bi bi-x-lg"
+            viewBox="0 0 16 16">
+            <path
+              d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+          </svg></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+
+      <div class="table_heading d-flex justify-content-between">
+        <h3 class="text-secondary">Medicine Ratelist</h3>
+        <button type="button" class="btn bg-gradient-primary" data-bs-toggle="modal" data-bs-target="#addmednames">
+          Add Medicine Ratelist
+        </button>
+      </div>
+
+      <table id="med" class="table table-sm table-striped table-bordered align-middle text-nowrap small">
+        <thead>
+          <tr>
+            <th>S.no</th>
+            <th>Ratelist Name</th> 
+            <th>Quantity/Pack</th>           
+            <th>Amount</th>
+            <th>Discount</th>
+            <th>CGST(%)</th>
+            <th>SGST(%)</th>
+            <th>Actions</th>
+
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>            
+            <td>{{ loop.index }}</td>
+            <td>{{item.medicine_name}}</td>
+            <td>{{item.quantity_per_pack}}</td>
+            <td>{{item.amount}}</td>
+            <td>{{item.discount}}</td>
+            <td>{{item.CGST}}</td>
+            <td>{{item.SGST}}</td>
+
+            <td>
+              <a href="{{ url_for('ratelist.editratelist', id=item.id) }}" data-bs-toggle="modal"
+                data-bs-target="#editratelist{{item.id}}">
+                <i class="bi bi-pencil-square mx-3"></i>
+              </a>
+
+              <div class="modal fade" id="editratelist{{item.id}}" tabindex="-1"
+                aria-labelledby="editmedstock{{item.id}}" aria-hidden="true">
+                <div
+                  class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+                  <div class="modal-content border-0 shadow w-50">
+                    <div class="modal-header form-header">
+                      <h5 class="modal-title" id="editratelist{{item.id}}">Edit Medicine Stock</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form action="{{ url_for('ratelist.editratelist', id=item.id) }}" method="POST">
+
+
+
+
+                        <div class="mb-3">
+                          <label for="medicine_id" class="form-label">Ratelist Name<span
+                              style="color: red;">*</span></label>
+                          <select class="form-select" name="medicine_id" id="medicine_id" required>
+                            <option value="">Select Medicine</option>
+                            {% for med in med_names %}
+                            <option value="{{ med.id }}" {% if med.id==item.pharmacy_medicine_id %}selected{% endif %}>
+                              {{ med.medicine_name }}
+                            </option>
+                            {% endfor %}
+                          </select>
+                        </div>                        <div class="row">
+                          <div class="mb-3 col-md-4">
+                            <label for="description" class="form-label">Amount<span style="color: red;">*</span></label>
+                            <input class="form-control" type="number" id="input" name="amount" value="{{item.amount}}">
+                          </div>
+
+                          <div class="mb-3 col-md-4">
+                            <label for="quantity" class="form-label">Quantity/Pack<span style="color: red;">*</span></label>
+                            <input class="form-control" type="number" id="quantity" name="quantity_per_pack" value="{{item.quantity_per_pack}}" min="1">
+                          </div>
+
+                          <div class="mb-3 col-md-4">
+                            <label for="expiry" class="form-label">Discount</label>
+                            <input class="form-control" type="number" id="discount" name="discount"
+                              value="{{item.discount}}">
+                          </div>
+                        </div>
+
+                        <div class="row">
+                          <div class="mb-3 col-md-6">
+                            <label for="description" class="form-label">CGST(%)<span style="color: red;">*</span></label>
+                            <input class="form-control" type="number" id="input" name="CGST" value="{{item.CGST}}">
+                          </div>
+
+                          <div class="mb-3 col-md-6">
+                            <label for="expiry" class="form-label">SGST(%)<span style="color: red;">*</span></label>
+                            <input class="form-control" type="number" id="discount" name="SGST"
+                              value="{{item.SGST}}">
+                          </div>
+                        </div>
+
+                        <div class="text-end">
+                          <button type="submit" class="btn bg-gradient-primary">Submit</button>
+                          <button type="button" class="btn bg-gradient-secondary me-2"
+                            data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <a href="{{ url_for('ratelist.ratedelete', id=item.id) }}"
+                onclick="return confirm('Are you sure you want to delete {{ item.medicine_name }}?');">
+                <i class="bi bi-trash-fill mx-3"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+<div class="modal fade" id="addmednames" tabindex="-1" aria-labelledby="addmednames" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
+    <div class="modal-content border-0 shadow w-50">
+      <div class="modal-header form-header">
+        <h5 class="modal-title" id="addmednames">Add Medicine ratelist</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{{ url_for('ratelist.addratelist') }}" method="POST">
+
+
+          <div class="mb-3">
+            <label for="medicine_id" class="form-label">Ratelist Name<span style="color: red;">*</span></label>
+            <select name="medicine_id" class="form-select" required>
+              <option value="">Select Medicine</option>
+              {% for med in med_names %}
+              <option value="{{ med.id }}">{{ med.medicine_name }}</option>
+              {% endfor %}
+            </select>
+          </div>          <div class="row">
+            <div class="mb-3 col-md-4">
+              <label for="description" class="form-label">Amount<span style="color: red;">*</span></label>
+              <input class="form-control" type="number" id="input" name="amount" placeholder="Enter Amount" rows="3">
+            </div>
+
+            <div class="mb-3 col-md-4">
+              <label for="quantity" class="form-label">Quantity/Pack<span style="color: red;">*</span></label>
+              <input class="form-control" type="number" id="quantity" name="quantity_per_pack" placeholder="Enter Quantity per Pack">
+            </div>
+
+            <div class="mb-3 col-md-4">
+              <label for="expiry" class="form-label">Discount</label>
+              <input class="form-control" type="number" id="input" name="discount" placeholder="Enter Discount">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="mb-3 col-md-6">
+              <label for="description" class="form-label">CGST(%)<span style="color: red;">*</span></label>
+              <input class="form-control" type="number" id="input" name="CGST" placeholder="Enter CGST" rows="3">
+            </div>
+
+            <div class="mb-3 col-md-6">
+              <label for="expiry" class="form-label">SGST(%)<span style="color: red;">*</span></label>
+              <input class="form-control" type="number" id="input" name="SGST" placeholder="Enter SGST">
+            </div>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn bg-gradient-primary">Submit</button>
+            <button type="button" class="btn bg-gradient-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}

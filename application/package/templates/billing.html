@@ -1,0 +1,657 @@
+{% extends "dashboard.html" %}
+
+{% block title %}Generate Bill{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .billing-wrapper {
+        margin-left: 250px; /* Match your sidebar width */
+        padding: 20px;
+        transition: margin 0.3s;
+    }
+    .medicine-row {
+        margin-bottom: 1rem;
+    }
+    .form-label {
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+    .form-control {
+        font-size: 0.875rem;
+    }
+    
+    @media (max-width: 1400px) {
+        .form-label {
+            font-size: 0.8rem;
+        }
+        .form-control {
+            padding: 0.25rem 0.5rem;
+        }
+        .col-lg-1, .col-md-1 {
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+    }
+    
+    @media (max-width: 1199.98px) {
+        .billing-wrapper {
+            margin-left: 20px !important;
+            margin-right: 20px !important;
+            padding: 15px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .billing-wrapper {
+            margin-left: 0;
+            padding: 10px;
+        }
+        #medicineRows {
+            overflow-x: auto;
+        }
+        .medicine-row {
+            min-width: 992px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-8">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="billing-wrapper ms-auto" style="margin-left: 260px !important; padding: 20px;">
+                <div class="billing-container">
+                    <div class="card shadow">
+                        <div class="card-header bg-gradient-primary text-white">
+                            <h4 class="mb-0">Generate Bill</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="billForm" action="{{ url_for('billing.generate_bill_post') }}" method="POST">
+                                <div id="medicineRows">
+                                    <div class="medicine-row row g-3 mb-3">
+                                        <div class="col-lg-2 col-md-6">
+                                            <label class="form-label d-block mb-2">Medicine Name</label>                     
+                                            <div class="dropdown-container position-relative">
+                                                <input type="text" class="form-control medicine-search" placeholder="Search medicine..."
+                                                    id="medicineSearchInput">                                                
+                                                    <div class="dropdown-list position-absolute w-100 d-none" id="medicineDropdown" style="position: absolute; z-index: 1000; background: white; border: 1px solid #ced4da; border-radius: 0.25rem; overflow-y: visible;">
+                                                </div>
+                                                <select class="form-select medicine-select d-none" name="medicine[]" required
+                                                    id="actualMedicineSelect">
+                                                    <option value="">Select Medicine</option><br>
+                                                    {% for med in med_names %}
+                                                    <option value="{{ med.id }}" data-price="{{ med.amount }}"
+                                                        data-discount="{{ med.discount }}" data-cgst="{{ med.cgst }}"
+                                                        data-sgst="{{ med.sgst }}" data-quantity="{{ med.quantity_per_pack }}">
+                                                        {{ med.ratelist_name }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <input type="hidden" name="medicine[]" id="selectedMedicineId" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">Quantity</label>
+                                            <input type="number" class="form-control quantity" name="quantity[]"
+                                                value="1" min="1" step="1" required
+                                                title="Enter quantity (can be freely edited in single units)">
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">Price</label>
+                                            <input type="text" class="form-control amount" name="amount[]" readonly>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">Discount</label>
+                                            <input type="text" class="form-control discount" name="discount[]" readonly>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">SGST(%)</label>
+                                            <input type="number" class="form-control sgst-rate" name="SGST" value="" min="0" max="100"
+                                                readonly>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">SGST Amt</label>
+                                            <input type="text" class="form-control sgst-amount" name="sgst_amount[]" readonly>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">CGST(%)</label>
+                                            <input type="number" class="form-control cgst-rate" name="CGST" value="" min="0" max="100"
+                                                readonly>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">CGST Amt</label>
+                                            <input type="text" class="form-control cgst-amount" name="cgst_amount[]" readonly>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">Taxable Amt</label>
+                                            <input type="text" class="form-control taxable-amount" name="taxable_amount[]" readonly>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">Net Amt</label>
+                                            <input type="text" class="form-control net-amount" name="net_amount[]" readonly>
+                                        </div>                                        
+                                        <div class="col-auto d-flex align-items-end">
+                                            <button type="button" class="btn btn-danger remove-row mb-2" style="display: none;"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="top" 
+                                                    title="Remove Row">
+                                                <i class="bi bi-dash-circle-fill"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <button type="button" class="btn bg-gradient-primary" id="addRow">
+                                        <i class="bi bi-plus-circle"></i> Add Medicine
+                                    </button>
+                                </div>
+
+                                <div class="card mt-4">
+                                    <div class="card-header bg-gradient-secondary text-white">
+                                        <h5 class="mb-0">Bill Summary</h5>
+                                    </div>                    
+                                    <div class="card-body">
+                                        <div class="row justify-content-end">
+                                            <div class="col-lg-5 col-md-6">
+                                                <div class="row g-3">
+                                                    <div class="col-sm-6">
+                                                        <div class="mb-2">
+                                                            <p><strong>CGST:</strong> ₹<span id="totalCGST">0.00</span></p>
+                                                            <p><strong>SGST:</strong> ₹<span id="totalSGST">0.00</span></p>
+                                                            <p><strong>IGST:</strong> ₹<span id="totalIGST">0.00</span></p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">                                                          <p><strong>Sub Total:</strong> ₹<span id="subTotal">0.00</span></p>
+                                                        <p><strong>Total Items:</strong> <span id="totalItems">0</span></p>
+                                                        <p><strong>Total Discount:</strong> ₹<span id="totalDiscount">0.00</span></p>
+                                                        <p><strong>Special Discount (₹):</strong> <input type="number" id="specialDiscount" class="form-control form-control-sm" value="0" min="0" style="width: 100px; display: inline-block;"></p>
+                                                        <p><strong>Amount to be Paid:</strong> ₹<span id="amountToBePaid">0.00</span></p>
+                                                        <div class="mb-2">
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn bg-gradient-primary">
+                            <i class="bi bi-printer"></i> Generate Bill
+                        </button>
+                    </div>
+                </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+
+    
+    <script>    document.addEventListener('DOMContentLoaded', function () {
+        console.log('Script initialized');
+        // Initialize tooltips
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        
+        const addRowBtn = document.getElementById('addRow');
+        const form = document.getElementById('billForm');
+        const specialDiscountInput = document.getElementById('specialDiscount');
+
+        if (specialDiscountInput) {
+            specialDiscountInput.addEventListener('input', function () {
+                calculateTotals();
+            });
+        }
+
+        console.log('Add Row Button found:', !!addRowBtn);
+        console.log('Form found:', !!form);
+        
+        // Initialize remove buttons
+        updateRemoveButtons();
+
+        if (specialDiscountInput) {
+            specialDiscountInput.addEventListener('input', function () {
+                calculateTotals();
+            });
+        }
+
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', function () {
+                console.log('Add Row button clicked');
+                addNewRow();
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                console.log('Form submitted');
+                generateBill();
+            });
+        }
+
+        // Initialize everything else
+        initializeSearchableDropdowns();
+        setupEventListeners();
+        calculateAllRows();
+        updateRemoveButtons();
+    });
+
+    function initializeSearchableDropdowns() {
+        document.querySelectorAll('.medicine-row').forEach(row => {
+            setupSearchableDropdown(row);
+        });
+    }
+
+    function setupSearchableDropdown(row) {
+        const searchInput = row.querySelector('.medicine-search');
+        const dropdown = row.querySelector('.dropdown-list');
+        const actualSelect = row.querySelector('.medicine-select');
+        const hiddenInput = row.querySelector('input[type="hidden"]');
+
+        if (!searchInput || !dropdown || !actualSelect || !hiddenInput) return;
+
+        const medicines = [];
+
+        for (let i = 1; i < actualSelect.options.length; i++) {
+            const option = actualSelect.options[i];
+            medicines.push({
+                id: option.value,
+                name: option.textContent.trim(),
+                price: option.dataset.price,
+                discount: option.dataset.discount,
+                cgst: option.dataset.cgst,
+                sgst: option.dataset.sgst,
+                quantity: option.dataset.quantity,
+                packSize: option.dataset.quantity
+            });
+        }
+
+        function populateDropdown(filter = '') {
+            dropdown.innerHTML = '';
+            const filterLower = filter.toLowerCase();
+
+            const defaultOption = document.createElement('div');
+            defaultOption.className = 'dropdown-item p-2';
+            defaultOption.textContent = 'Select Medicine';
+            defaultOption.dataset.id = '';
+            defaultOption.style.cursor = 'pointer';
+            dropdown.appendChild(defaultOption);
+
+            const matchingMedicines = medicines.filter(med => med.name.toLowerCase().includes(filterLower));
+            matchingMedicines.forEach(medicine => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item p-2';
+                item.textContent = medicine.name;
+                item.dataset.id = medicine.id;
+                item.dataset.price = medicine.price;
+                item.dataset.discount = medicine.discount;
+                item.dataset.cgst = medicine.cgst;
+                item.dataset.sgst = medicine.sgst;
+                item.dataset.quantity = medicine.quantity;
+                item.dataset.packSize = medicine.packSize;
+                item.style.cursor = 'pointer';
+                dropdown.appendChild(item);
+            });
+
+            if (matchingMedicines.length === 0 && filter !== '') {
+                const noResults = document.createElement('div');
+                noResults.className = 'p-2 text-muted';
+                noResults.textContent = 'No medicines found';
+                dropdown.appendChild(noResults);
+            }
+        }
+
+        populateDropdown();
+
+        searchInput.addEventListener('focus', function () {
+            dropdown.classList.remove('d-none');
+        });
+
+        searchInput.addEventListener('input', function () {
+            populateDropdown(this.value);
+            dropdown.classList.remove('d-none');
+        });
+
+        dropdown.addEventListener('click', function (event) {
+            if (event.target.classList.contains('dropdown-item')) {
+                const id = event.target.dataset.id;
+                const name = event.target.textContent;
+                const price = event.target.dataset.price;
+                const discount = event.target.dataset.discount;
+                const cgst = event.target.dataset.cgst;
+                const sgst = event.target.dataset.sgst;
+                const packSize = event.target.dataset.packSize;
+
+                hiddenInput.value = id;
+                searchInput.value = name;
+                if (id) {
+                    actualSelect.value = id;
+
+                    const quantityInput = row.querySelector('.quantity');
+                    if (quantityInput && packSize) {
+                        const packSizeNum = parseInt(packSize) || 1;
+                        quantityInput.value = packSizeNum;
+                        quantityInput.min = "1";
+                        quantityInput.step = "1";
+                        quantityInput.title = `Initial pack size: ${packSizeNum} - Can be freely edited in single units`;
+
+                        const newQuantityInput = quantityInput.cloneNode(true);
+                        quantityInput.parentNode.replaceChild(newQuantityInput, quantityInput);
+
+                        newQuantityInput.addEventListener('input', function () {
+                            calculateRow(row);
+                        });
+                    }
+
+                    calculateRow(row);
+                } else {
+                    searchInput.value = '';
+                    searchInput.classList.remove('is-valid');
+                    actualSelect.selectedIndex = 0;
+                    const quantityInput = row.querySelector('.quantity');
+                    if (quantityInput) {
+                        quantityInput.value = '1';
+                        quantityInput.min = '1';
+                        quantityInput.step = '1';
+                        quantityInput.title = '';
+                    }
+                    calculateRow(row);
+                }
+
+                dropdown.classList.add('d-none');
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('.dropdown-container') || event.target.closest('.dropdown-container') !== searchInput.closest('.dropdown-container')) {
+                dropdown.classList.add('d-none');
+            }
+        });
+
+        const quantityInput = row.querySelector('.quantity');
+        if (quantityInput) {
+            quantityInput.addEventListener('input', function () {
+                console.log('Quantity changed');
+                calculateRow(row);
+            });
+
+            quantityInput.addEventListener('blur', function () {
+                let currentValue = parseInt(this.value) || 0;
+                if (currentValue < 1) {
+                    this.value = 1;
+                    calculateRow(row);
+                }
+            });
+        }
+    }    function addNewRow() {
+        const container = document.getElementById('medicineRows');
+        const firstRow = document.querySelector('.medicine-row');
+
+        if (container && firstRow) {
+            const newRow = firstRow.cloneNode(true);
+            // Show remove button for new row
+            const removeButton = newRow.querySelector('.remove-row');
+            if (removeButton) {
+                removeButton.style.display = 'block';
+            }
+
+            const selects = newRow.querySelectorAll('select');
+            const inputs = newRow.querySelectorAll('input');
+
+            selects.forEach(select => select.selectedIndex = 0);
+            inputs.forEach(input => {
+                if (input.type === 'number' && input.classList.contains('quantity')) {
+                    input.value = '1';
+                    input.min = '1';
+                    input.step = '1';
+                    input.title = 'Enter quantity (can be freely edited in single units)';
+                } else {
+                    input.value = '';
+                }
+            });
+
+            const searchInput = newRow.querySelector('.medicine-search');
+            if (searchInput) searchInput.value = '';
+
+            container.appendChild(newRow);
+            console.log('New row added');            setupSearchableDropdown(newRow);
+            setupEventListeners();
+            updateRemoveButtons();
+            
+            // Initialize tooltips for the new row
+            const newTooltips = newRow.querySelectorAll('[data-bs-toggle="tooltip"]');
+            newTooltips.forEach(element => new bootstrap.Tooltip(element));
+        } else {
+            console.error('Container or row template not found');
+        }
+    }
+
+    function setupEventListeners() {
+        const medicineInputs = document.querySelectorAll('input[name="medicine[]"]');
+        const medicineSelects = document.querySelectorAll('.medicine-select');
+        const quantityInputs = document.querySelectorAll('.quantity');
+        const removeButtons = document.querySelectorAll('.remove-row');
+
+        if (medicineInputs) {
+            medicineInputs.forEach(input => {
+                if (input) {
+                    input.addEventListener('change', function () {
+                        console.log('Medicine selected (hidden input)');
+                        calculateRow(this.closest('.medicine-row'));
+                    });
+                }
+            });
+        }
+
+        if (medicineSelects) {
+            medicineSelects.forEach(select => {
+                if (select) {
+                    select.addEventListener('change', function () {
+                        console.log('Medicine selected (original)');
+                        calculateRow(this.closest('.medicine-row'));
+                    });
+                }
+            });
+        }
+
+        if (quantityInputs) {
+            quantityInputs.forEach(input => {
+                if (input) {
+                    input.addEventListener('input', function () {
+                        console.log('Quantity changed');
+                        calculateRow(this.closest('.medicine-row'));
+                    });
+                }
+            });
+        }
+
+        if (removeButtons) {
+            removeButtons.forEach(button => {
+                if (button) {
+                    button.addEventListener('click', function () {
+                        console.log('Remove button clicked');
+                        if (document.querySelectorAll('.medicine-row').length > 1) {
+                            this.closest('.medicine-row').remove();
+                            updateRemoveButtons();
+                            calculateTotals();
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    function calculateRow(row) {
+        if (!row) return; const select = row.querySelector('.medicine-select');
+        const hiddenInput = row.querySelector('input[name="medicine[]"]');
+        const quantityInput = row.querySelector('.quantity');
+        const amountInput = row.querySelector('.amount');
+        const discountInput = row.querySelector('.discount');
+        const cgstRateInput = row.querySelector('.cgst-rate');
+        const sgstRateInput = row.querySelector('.sgst-rate');
+        const cgstAmountInput = row.querySelector('.cgst-amount');
+        const sgstAmountInput = row.querySelector('.sgst-amount');
+        const taxableAmountInput = row.querySelector('.taxable-amount');
+        const netAmountInput = row.querySelector('.net-amount');
+
+        const medicineId = hiddenInput.value;
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const packSize = parseFloat(select.options[select.selectedIndex].dataset.quantity) || 1;
+        const isPackSizeMode = packSize > 1;
+
+        let price = parseFloat(amountInput.value) || 0;
+        let discount = parseFloat(discountInput.value) || 0;
+        let cgstRate = parseFloat(cgstRateInput.value) || 0;
+        let sgstRate = parseFloat(sgstRateInput.value) || 0;        if (medicineId) {
+            const selectedOption = Array.from(select.options).find(option => option.value === medicineId);
+            if (selectedOption) {
+                // Get price per unit
+                price = parseFloat(selectedOption.dataset.price) || 0;
+                discount = parseFloat(selectedOption.dataset.discount) || 0;
+                cgstRate = parseFloat(selectedOption.dataset.cgst) || 0;
+                sgstRate = parseFloat(selectedOption.dataset.sgst) || 0;
+            }
+        }
+          // Calculate total price (price per unit * quantity)
+        let itemTotal = price * quantity;
+        amountInput.value = (price * quantity).toFixed(2);  // Update price field to show price × quantity
+
+        // Calculate discount on base price
+        let itemDiscount = (itemTotal * discount) / 100;
+        
+        // Calculate taxable amount (price after discount)
+        let taxableAmount = itemTotal - itemDiscount;
+        // Calculate GST on taxable amount
+        let itemCgst = (taxableAmount * cgstRate) / 100;
+        let itemSgst = (taxableAmount * sgstRate) / 100;
+        
+        // Calculate final net amount (taxable amount + GSTs)
+        let itemNet = taxableAmount + itemCgst + itemSgst;
+
+        if (isPackSizeMode) {
+            const packSizeDiscount = Math.floor(quantity / packSize) * discount;
+            
+            taxableAmount = itemTotal - itemDiscount;
+            itemCgst = (taxableAmount * cgstRate) / 100;
+            itemSgst = (taxableAmount * sgstRate) / 100;
+            itemNet = taxableAmount + itemCgst + itemSgst;
+        }        amountInput.value = (price * quantity).toFixed(2);  // Show price x quantity
+        discountInput.value = discount.toFixed(2);
+        cgstRateInput.value = cgstRate.toFixed(2);
+        sgstRateInput.value = sgstRate.toFixed(2);
+        cgstAmountInput.value = itemCgst.toFixed(2);
+        sgstAmountInput.value = itemSgst.toFixed(2);
+        taxableAmountInput.value = (itemTotal - itemDiscount).toFixed(2);
+        netAmountInput.value = itemNet.toFixed(2);
+
+        calculateTotals();
+    }    function calculateAllRows() {
+        document.querySelectorAll('.medicine-row').forEach(row => {
+            calculateRow(row);
+        });
+    }
+
+    // Function to update visibility of remove buttons
+    function updateRemoveButtons() {
+        const rows = document.querySelectorAll('.medicine-row');
+        rows.forEach((row, index) => {
+            const removeButton = row.querySelector('.remove-row');
+            if (removeButton) {
+                // Show remove button for all rows except the first one
+                removeButton.style.display = index === 0 && rows.length === 1 ? 'none' : 'block';
+            }
+        });
+    }
+
+    function calculateTotals() {
+        let totalCGST = 0;
+        let totalSGST = 0;
+        let totalIGST = 0;
+        let subTotal = 0;
+        let totalItems = 0;
+        let totalDiscount = 0;
+
+        document.querySelectorAll('.medicine-row').forEach(row => {
+            const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+            const amount = parseFloat(row.querySelector('.amount').value) || 0;
+            const discount = parseFloat(row.querySelector('.discount').value) || 0;
+            const cgstAmount = parseFloat(row.querySelector('.cgst-amount').value) || 0;
+            const sgstAmount = parseFloat(row.querySelector('.sgst-amount').value) || 0;
+            const netAmount = parseFloat(row.querySelector('.net-amount').value) || 0;            totalItems += quantity;
+            const taxableAmount = parseFloat(row.querySelector('.taxable-amount').value) || 0;
+            subTotal += taxableAmount; // Use taxable amount for subtotal
+            totalDiscount += (amount * discount / 100) * quantity;
+            totalCGST += cgstAmount;
+            totalSGST += sgstAmount;
+        });
+
+        totalIGST = 0; // Reset IGST to 0 for now
+
+        document.getElementById('totalCGST').textContent = totalCGST.toFixed(2);
+        document.getElementById('totalSGST').textContent = totalSGST.toFixed(2);
+        document.getElementById('totalIGST').textContent = totalIGST.toFixed(2);
+        document.getElementById('subTotal').textContent = subTotal.toFixed(2);        document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);        // Calculate total amount to be paid (sum of all net amounts - special discount)
+        let amountToBePaid = 0;
+        document.querySelectorAll('.medicine-row').forEach(row => {
+            const netAmount = parseFloat(row.querySelector('.net-amount').value) || 0;
+            amountToBePaid += netAmount;
+        });
+        
+        // Subtract special discount
+        const specialDiscount = parseFloat(document.getElementById('specialDiscount').value) || 0;
+        amountToBePaid = Math.max(0, amountToBePaid - specialDiscount);
+        document.getElementById('amountToBePaid').textContent = amountToBePaid.toFixed(2);
+
+        const finalNetAmount = (subTotal - totalDiscount) + totalCGST + totalSGST;
+        document.getElementById('finalNetAmount').textContent = finalNetAmount.toFixed(2);
+    }
+
+    document.getElementById('specialDiscount').addEventListener('input', function () {
+        const specialDiscount = parseFloat(this.value) || 0;
+        let subTotal = 0;
+
+        document.querySelectorAll('.medicine-row').forEach(row => {
+            const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+            const amount = parseFloat(row.querySelector('.amount').value) || 0;
+            subTotal += amount * quantity;
+        });
+
+        const totalDiscount = (subTotal * specialDiscount) / 100;
+        const finalNetAmount = (subTotal - totalDiscount) + parseFloat(document.getElementById('totalCGST').textContent) + parseFloat(document.getElementById('totalSGST').textContent);
+
+        document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);
+        document.getElementById('finalNetAmount').textContent = finalNetAmount.toFixed(2);
+    });
+
+    
+    </script>
+    <script>
+document.getElementById('billForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    console.log('Submitting form data...');
+
+    fetch('/generate-bill', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Raw response:', response);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Parsed response:', data);
+        
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating bill. Please try again.');
+    });
+});
+</script>
+
+{% endblock %}

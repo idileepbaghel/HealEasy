@@ -1,0 +1,224 @@
+<!--
+=========================================================
+* Soft UI Dashboard 3 - v1.1.0
+=========================================================
+
+* Product Page: https://www.creative-tim.com/product/soft-ui-dashboard
+* Copyright 2024 Creative Tim (https://www.creative-tim.com)
+* Licensed under MIT (https://www.creative-tim.com/license)
+* Coded by Creative Tim
+
+=========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="apple-touch-icon" sizes="76x76"
+    href="soft-ui-dashboard-main/assets/img/apple-icon.png">
+    <link rel="icon" type="image/png" href="soft-ui-dashboard-main/assets/img/favicon.png">
+    <title>
+      HealEasy
+    </title>
+  <!--     Fonts and icons     -->
+  <link href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" rel="stylesheet" />
+  <!-- Nucleo Icons -->
+  <link href="soft-ui-dashboard-main/css/nucleo-icons.css" rel="stylesheet" />
+  <link href="soft-ui-dashboard-main/css/nucleo-svg.css" rel="stylesheet" />
+  <!-- Font Awesome Icons -->
+  <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+  <!-- CSS Files -->
+  <link id="pagestyle"
+    href="soft-ui-dashboard-main/css/soft-ui-dashboard.css?v=1.1.0"
+    rel="stylesheet" />
+  <!-- Nepcha Analytics (nepcha.com) -->
+  <!-- Nepcha is a easy-to-use web analytics. No cookies and fully compliant with GDPR, CCPA and PECR. -->
+  <script defer data-site="YOUR_DOMAIN_HERE" src="https://api.nepcha.com/js/nepcha-analytics.js"></script>
+</head>
+
+<body class="">
+  <div class="container position-sticky z-index-sticky top-0">
+    <div class="row">
+      <div class="col-12">
+        <!-- Navbar -->
+        <nav
+          class="navbar navbar-expand-lg blur blur-rounded top-0 z-index-3 shadow position-absolute my-3 py-2 start-0 end-0 mx-4">
+          <div class="container-fluid pe-0">
+            <a class="navbar-brand font-weight-bolder ms-lg-0 ms-3" href="{{ url_for('auth_bp.dashboard') }}">
+              HealEasy
+            </a>
+            <button class="navbar-toggler shadow-none ms-2" type="button" data-bs-toggle="collapse"
+              data-bs-target="#navigation" aria-controls="navigation" aria-expanded="false"
+              aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon mt-2">
+                <span class="navbar-toggler-bar bar1"></span>
+                <span class="navbar-toggler-bar bar2"></span>
+                <span class="navbar-toggler-bar bar3"></span>
+              </span>
+            </button>
+            <div class="collapse navbar-collapse" id="navigation">
+              <ul class="navbar-nav mx-auto ms-xl-auto me-xl-7">
+                <li class="nav-item">
+                  <a class="nav-link d-flex align-items-center me-2 active" aria-current="page"
+                    href="{{ url_for('auth_bp.dashboard') }}">
+                    <i class="fa fa-chart-pie opacity-6 text-dark me-1"></i>
+                    Dashboard
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link me-2" href="{{ url_for('auth_bp.signup') }}">
+                    <i class="fas fa-user-circle opacity-6 text-dark me-1"></i>
+                    Sign Up
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link me-2" href="{{ url_for('auth_bp.login') }}">
+                    <i class="fas fa-key opacity-6 text-dark me-1"></i>
+                    Sign In
+                  </a>
+                </li>
+              </ul>
+
+            </div>
+          </div>
+        </nav>
+        <!-- End Navbar -->
+
+        <main class="main-content  mt-0">
+          <section>
+            <div class="page-header min-vh-75">
+              <div class="container">
+                <div class="row">
+                  <div class="col-xl-4 col-lg-5 col-md-6 d-flex flex-column mx-auto">
+                    <div class="card card-plain mt-8">
+                      <div class="card-header pb-0 text-left bg-transparent">
+                        <h3 class="font-weight-bolder text-info text-gradient">Welcome back</h3>
+                        <p class="mb-0">Enter your email and password to sign in</p>
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                          {{ message }}
+                          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><svg
+                              xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" class="bi bi-x-lg"
+                              viewBox="0 0 16 16">
+                              <path
+                                d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                            </svg></button>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+                      </div>
+                      
+
+                      <div class="card-body">
+                        <form role="form" method="POST" action="{{ url_for('auth_bp.login') }}">
+                          <label>Email<span style="color: red;">*</span></label>
+                          <div class="mb-3">
+                            <input type="email" class="form-control" placeholder="Email" aria-label="Email" name="email"
+                              aria-describedby="email-addon" required>
+                          </div>
+                          <label>Password<span style="color: red;">*</span></label>
+                          <div class="mb-3">
+                            <input type="password" class="form-control" placeholder="Password" aria-label="Password" name="password"
+                              aria-describedby="password-addon" required>
+                          </div>
+                          <div class="text-center">
+                            <button type="submit" class="btn bg-gradient-info w-100 mt-4 mb-0">Sign in</button>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="card-footer text-center pt-0 px-lg-2 px-1">
+                        <p class="mb-4 text-sm mx-auto">
+                          Don't have an account?
+                          <a href="{{ url_for('auth_bp.signup') }}" class="text-info text-gradient font-weight-bold">Sign up</a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="oblique position-absolute top-0 h-100 d-md-block d-none me-n8">
+                      <div class="oblique-image bg-cover position-absolute fixed-top ms-auto h-100 z-index-0 ms-n6"
+                        style="background-image: url('soft-ui-dashboard-main/assets/img/curved-images/curved6.jpg')">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+        
+        <!-- -------- START FOOTER 3 w/ COMPANY DESCRIPTION WITH LINKS & SOCIAL ICONS & COPYRIGHT ------- -->
+        <footer class="footer py-5">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-8 mx-auto text-center mb-4 mt-2">
+                <a href="https://www.linkedin.com/company/setukrite/posts/?feedView=all" target="_blank" class="text-secondary me-xl-4 me-4">
+                  <span class="text-lg fab fa-linkedin"></span>
+                </a>
+                <a href="https://community.learntrail.in/" target="_blank" class="text-secondary me-xl-4 me-4">
+                  <span class="text-lg fas fa-globe"></span>
+                </a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-8 mx-auto text-center mt-1">
+                <p class="mb-0 text-secondary">
+                  Copyright ©
+                  <script>
+                    document.write(new Date().getFullYear())
+                  </script> Setukrite Technology
+                </p>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </div>
+  <!-- -------- END FOOTER 3 w/ COMPANY DESCRIPTION WITH LINKS & SOCIAL ICONS & COPYRIGHT ------- -->
+  <!--   Core JS Files   -->
+  <script src="soft-ui-dashboard-main/assets/js/core/popper.min.js"></script>
+  <script src="soft-ui-dashboard-main/assets/js/core/bootstrap.min.js"></script>
+  <script src="soft-ui-dashboard-main/assets/js/plugins/perfect-scrollbar.min.js"></script>
+  <script src="soft-ui-dashboard-main/assets/js/plugins/smooth-scrollbar.min.js"></script>
+  <script>
+    var win = navigator.platform.indexOf('Win') > -1;
+    if (win && document.querySelector('#sidenav-scrollbar')) {
+      var options = {
+        damping: '0.5'
+      }
+      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
+    }
+  </script>
+  <!-- Github buttons -->
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+  <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
+  <script src="soft-ui-dashboard-main/assets/js/soft-ui-dashboard.min.js?v=1.1.0"></script>
+  <script>
+    // Auto-hide alerts after 2 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(function(alert) {
+        setTimeout(function() {
+          // Create fade out effect
+          alert.classList.remove('show');
+          alert.classList.add('fade');
+          
+          // Remove alert after fade animation
+          setTimeout(function() {
+            alert.remove();
+          }, 150);
+        }, 2000); // 2000ms = 2 seconds
+      });
+    });
+  </script>
+</body>
+
+</html>
