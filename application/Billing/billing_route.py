@@ -40,21 +40,12 @@ def test_route():
 
 @billing.route('/generate-bill', methods=['POST'])
 def generate_bill_post():
-    """Route to handle bill generation and capture all form data using getlist"""
-    # Add debug prints at the very beginning
+    """Route to handle bill generation and return data in the required JSON format"""
     print("=== ROUTE HIT: /generate-bill ===")
     print(f"Request method: {request.method}")
     print(f"Content type: {request.content_type}")
-    print(f"Form data keys: {list(request.form.keys())}")
-    print(f"Total form fields: {len(request.form)}")
     
     try:
-        # Print ALL form data first (for debugging)
-        print("\n=== ALL FORM DATA (RAW) ===")
-        for key, value in request.form.items():
-            print(f"{key}: {value}")
-        print("=== END ALL FORM DATA ===\n")
-        
         # Get all form data using getlist for arrays
         medicine_ids = request.form.getlist('medicine[]')
         quantities = request.form.getlist('quantity[]')
@@ -65,175 +56,116 @@ def generate_bill_post():
         taxable_amounts = request.form.getlist('taxable_amount[]')
         net_amounts = request.form.getlist('net_amount[]')
         
-        # Debug prints for getlist results
+        # Debug prints
         print(f"Medicine IDs: {medicine_ids}")
         print(f"Quantities: {quantities}")
         print(f"Amounts: {amounts}")
-        print(f"Discounts: {discounts}")
+        print(f"Net Amounts: {net_amounts}")
         
-        # Get single value fields if any
-        single_fields = {}
-        for key in request.form.keys():
-            if not key.endswith('[]'):
-                single_fields[key] = request.form.get(key)
-        
-        # Create raw form data structure
-        raw_form_data = {
-            'medicine_ids': medicine_ids,
-            'quantities': quantities,
-            'amounts': amounts,
-            'discounts': discounts,
-            'sgst_amounts': sgst_amounts,
-            'cgst_amounts': cgst_amounts,
-            'taxable_amounts': taxable_amounts,
-            'net_amounts': net_amounts,
-            'single_fields': single_fields,
-            'total_fields': len(request.form),
-            'all_keys': list(request.form.keys())
-        }
-        
-        # Print raw form data in JSON format
-        print("\n=== RAW FORM DATA (using getlist) ===")
-        print(json.dumps(raw_form_data, indent=2, default=str))
-        print("=== END OF RAW FORM DATA ===\n")
-        
-        # Only process if we have medicine data
-        medicines = []
-        if medicine_ids:
-            for i in range(len(medicine_ids)):
-                if medicine_ids[i]:  # Only process rows with selected medicines
-                    medicine_data = {
-                        'row_index': i,
-                        'medicine_id': medicine_ids[i],
-                        'quantity': float(quantities[i]) if i < len(quantities) and quantities[i] else 0,
-                        'amount': float(amounts[i]) if i < len(amounts) and amounts[i] else 0,
-                        'discount': float(discounts[i]) if i < len(discounts) and discounts[i] else 0,
-                        'sgst_amount': float(sgst_amounts[i]) if i < len(sgst_amounts) and sgst_amounts[i] else 0,
-                        'cgst_amount': float(cgst_amounts[i]) if i < len(cgst_amounts) and cgst_amounts[i] else 0,
-                        'taxable_amount': float(taxable_amounts[i]) if i < len(taxable_amounts) and taxable_amounts[i] else 0,
-                        'net_amount': float(net_amounts[i]) if i < len(net_amounts) and net_amounts[i] else 0
-                    }
-                    
-                    # Get medicine details from database
-                    try:
-                        cur = mysql.connection.cursor()
-                        cur.execute("""
-                            SELECT ratelist_name, amount as unit_price, discount as discount_rate, 
-                                   cgst as cgst_rate, sgst as sgst_rate, quantity_per_pack
-                            FROM pharmacy_ratelist 
-                            WHERE id = %s
-                        """, (medicine_ids[i],))
-                        medicine_details = cur.fetchone()
-                        cur.close()
-                        
-                        if medicine_details:
-                            medicine_data.update({
-                                'medicine_name': medicine_details['ratelist_name'],
-                                'unit_price': float(medicine_details['unit_price']),
-                                'discount_rate': float(medicine_details['discount_rate']),
-                                'cgst_rate': float(medicine_details['cgst_rate']),
-                                'sgst_rate': float(medicine_details['sgst_rate']),
-                                'quantity_per_pack': int(medicine_details['quantity_per_pack'])
-                            })
-                    except Exception as db_error:
-                        print(f"Database error for medicine {medicine_ids[i]}: {str(db_error)}")
-                        medicine_data['database_error'] = str(db_error)
-                    
-                    medicines.append(medicine_data)
-        
-        # Calculate totals
-        totals = {
-            'total_cgst': sum(med.get('cgst_amount', 0) for med in medicines),
-            'total_sgst': sum(med.get('sgst_amount', 0) for med in medicines),
-            'total_igst': 0,
-            'sub_total': sum(med.get('taxable_amount', 0) for med in medicines),
-            'total_items': sum(med.get('quantity', 0) for med in medicines),
-            'total_discount': sum((med.get('amount', 0) * med.get('discount_rate', 0) / 100) if 'discount_rate' in med else 0 for med in medicines),
-            'amount_to_be_paid': sum(med.get('net_amount', 0) for med in medicines)
-        }
-        
-        # Complete bill data structure
-        complete_bill_data = {
-            'raw_form_data': raw_form_data,
-            'processed_medicines': medicines,
-            'calculated_totals': totals,
-            'bill_summary': {
-                'total_medicines': len(medicines),
-                'total_quantity': totals['total_items'],
-                'gross_amount': sum(med.get('amount', 0) for med in medicines),
-                'total_discount_amount': totals['total_discount'],
-                'taxable_amount': totals['sub_total'],
-                'total_cgst': totals['total_cgst'],
-                'total_sgst': totals['total_sgst'],
-                'total_igst': totals['total_igst'],
-                'final_amount': totals['amount_to_be_paid']
-            },
-            'metadata': {
-                'total_rows_submitted': len(medicine_ids) if medicine_ids else 0,
-                'valid_medicine_rows': len(medicines),
-                'form_fields_count': len(request.form),
-                'request_info': {
-                    'method': request.method,
-                    'content_type': request.content_type,
-                    'url': request.url
-                }
-            }
-        }
-        
-        # Print complete bill data in JSON format
-        print("\n=== COMPLETE PROCESSED BILL DATA ===")
-        print(json.dumps(complete_bill_data, indent=2, default=str))
-        print("=== END OF COMPLETE BILL DATA ===\n")
-        
-        # Add formatted bill data
-        formatted_bill = {
-            "org_id": 1,  # You can modify this based on your org ID source
-            "username": single_fields.get('username', ''),
-            "items": [
-                {
-                    "medicine_name": med.get('medicine_name', ''),
-                    "quantity": str(med.get('quantity', 0)),
-                    "amount": "{:.2f}".format(float(med.get('amount', 0))),
-                    "net_amount": "{:.2f}".format(float(med.get('net_amount', 0)))
-                } for med in medicines
-            ],
+        # Initialize the response structure
+        response_data = {
+            "timestamp": "2025-06-06T13:10:56.482Z",
+            "medicines": [],
             "summary": {
-                "totalAmount": "{:.2f}".format(float(totals['amount_to_be_paid'])),
-                "totalItems": str(totals['total_items'])
+                "totalItems": 0,
+                "subTotal": 0.0,
+                "totalDiscount": 0.0,
+                "totalCGST": 0.0,
+                "totalSGST": 0.0,
+                "totalIGST": 0.0,
+                "amountToBePaid": 0.0
             }
         }
         
-        # Print formatted bill data
-        print("\n=== FORMATTED BILL DATA ===")
-        print(json.dumps(formatted_bill, indent=2))
-        print("=== END OF FORMATTED BILL DATA ===\n")
+        # Process medicines and get details from database
+        cur = mysql.connection.cursor()
+        total_quantity = 0
+        total_cgst = 0.0
+        total_sgst = 0.0
+        total_discount = 0.0
+        total_amount = 0.0
+        subtotal = 0.0
         
-        # Include formatted data in response
-        complete_bill_data['formatted_bill'] = formatted_bill
+        try:
+            # Process each medicine entry
+            for i in range(len(medicine_ids)):
+                if medicine_ids[i] and i < len(quantities) and quantities[i]:
+                    # Get medicine details from database
+                    cur.execute("""
+                        SELECT ratelist_name, amount as unit_price, discount as discount_rate, 
+                               cgst as cgst_rate, sgst as sgst_rate
+                        FROM pharmacy_ratelist 
+                        WHERE id = %s
+                    """, (medicine_ids[i],))
+                    
+                    medicine_details = cur.fetchone()
+                    
+                    if medicine_details:
+                        quantity = float(quantities[i]) if quantities[i] else 0
+                        unit_price = float(medicine_details['unit_price'])
+                        discount_rate = float(medicine_details['discount_rate'])
+                        cgst_rate = float(medicine_details['cgst_rate'])
+                        sgst_rate = float(medicine_details['sgst_rate'])
+                        
+                        # Calculate amounts
+                        gross_amount = quantity * unit_price
+                        discount_amount = gross_amount * (discount_rate / 100)
+                        taxable_amount = gross_amount - discount_amount
+                        cgst_amount = taxable_amount * (cgst_rate / 100)
+                        sgst_amount = taxable_amount * (sgst_rate / 100)
+                        net_amount = taxable_amount + cgst_amount + sgst_amount
+                        
+                        # Create medicine entry
+                        medicine_entry = {
+                            "rowIndex": i + 1,
+                            "medicineId": medicine_ids[i],
+                            "medicineName": medicine_details['ratelist_name'],
+                            "quantity": int(quantity),
+                            "price": round(unit_price, 2),
+                            "discountRate": int(discount_rate),
+                            "sgstRate": int(sgst_rate),
+                            "sgstAmount": round(sgst_amount, 2),
+                            "cgstRate": int(cgst_rate),
+                            "cgstAmount": round(cgst_amount, 2),
+                            "taxableAmount": round(taxable_amount, 2),
+                            "netAmount": round(net_amount, 2)
+                        }
+                        
+                        response_data["medicines"].append(medicine_entry)
+                        
+                        # Update totals
+                        total_quantity += quantity
+                        total_cgst += cgst_amount
+                        total_sgst += sgst_amount
+                        total_discount += discount_amount
+                        total_amount += net_amount
+                        subtotal += taxable_amount
+            
+            # Update summary
+            response_data["summary"] = {
+                "totalItems": int(total_quantity),
+                "subTotal": round(subtotal, 2),
+                "totalDiscount": round(total_discount, 2),
+                "totalCGST": round(total_cgst, 2),
+                "totalSGST": round(total_sgst, 2),
+                "totalIGST": 0.0,  # Assuming no IGST for now
+                "amountToBePaid": round(total_amount, 2)
+            }
+            
+        finally:
+            cur.close()
         
-        # Return success response
-        return jsonify({
-            'success': True,
-            'message': 'Bill data captured and processed successfully',
-            'data': complete_bill_data,
-            'billId': f'BILL_{len(medicines)}_{int(totals["amount_to_be_paid"])}'
-        })
+        print("\n=== GENERATED RESPONSE ===")
+        print(json.dumps(response_data, indent=2))
+        print("=== END OF RESPONSE ===\n")
+        
+        return jsonify(response_data)
         
     except Exception as e:
-        error_data = {
-            'error': str(e),
-            'error_type': type(e).__name__,
-            'form_keys': list(request.form.keys()) if request.form else [],
-            'form_values': dict(request.form) if request.form else {}
-        }
-        print("\n=== ERROR DATA ===")
-        print(json.dumps(error_data, indent=2, default=str))
-        print("=== END OF ERROR DATA ===\n")
-        
+        print(f"Error processing bill: {str(e)}")
         return jsonify({
             'success': False,
-            'message': f'Error processing bill: {str(e)}',
-            'error_data': error_data
+            'message': f'Error processing bill: {str(e)}'
         }), 500
 
 
@@ -417,8 +349,7 @@ def calculate_bill():
                 
                 if quantity > available_quantity:
                     stock_warnings.append(f"Medicine ID {medicine_id}: Requested {quantity} units but only {available_quantity} available")
-            
-            # If any stock warnings, return them
+              # If any stock warnings, return them
             if stock_warnings:
                 return jsonify({
                     'success': False,
@@ -427,7 +358,9 @@ def calculate_bill():
                 }), 400
                 
         finally:
-            cur.close()        # Calculate totals if stock validation passed
+            cur.close()
+        
+        # Calculate totals if stock validation passed
         subtotal = sum(float(item['net_amount']) for item in items)
         total_items = sum(int(item['quantity']) for item in items)
         
@@ -440,16 +373,25 @@ def calculate_bill():
         
         # Calculate final amount including taxes
         total_amount = subtotal + total_cgst + total_sgst + total_igst
-
+        
         return jsonify({
             'success': True,
-            'data': {
-                'total_items': total_items,
-                'sub_total': round(subtotal, 2),
-                'total_cgst': round(total_cgst, 2),
-                'total_sgst': round(total_sgst, 2),
-                'total_igst': round(total_igst, 2),
-                'total_amount': round(total_amount, 2)
+            'bill_calculation': {
+                'summary': {
+                    'total_items': total_items,
+                    'sub_total': round(subtotal, 2),
+                    'total_cgst': round(total_cgst, 2),
+                    'total_sgst': round(total_sgst, 2),
+                    'total_igst': round(total_igst, 2),
+                    'total_amount': round(total_amount, 2)
+                },
+                'tax_breakdown': {
+                    'cgst_percentage': 9.0 if total_cgst > 0 else 0.0,
+                    'sgst_percentage': 9.0 if total_sgst > 0 else 0.0,
+                    'igst_percentage': 18.0 if total_igst > 0 else 0.0,
+                    'total_tax_amount': round(total_cgst + total_sgst + total_igst, 2)
+                },
+                'calculation_status': 'completed'
             }
         })
 
@@ -464,14 +406,14 @@ def print_bill_format():
     """Route to format and print bill data in the specified JSON format"""
     try:
         data = request.get_json() if request.is_json else request.form.to_dict(flat=False)
-        
-        # Format the billing data into the required structure
+          # Format the billing data into the required structure with key-value pairs
         formatted_bill = {
-            "org_id": 1,  # You can modify this based on your org ID source
+            "org_id": 1,
             "username": data.get('username', [''])[0] if isinstance(data.get('username'), list) else data.get('username', ''),
-            "items": [],
+            "items": {},
             "summary": {
-                "totalAmount": "0.00"
+                "totalAmount": "0.00",
+                "totalItems": "0"
             }
         }
 
@@ -482,9 +424,10 @@ def print_bill_format():
         discounts = data.get('discount[]', [])
         net_amounts = data.get('net_amount[]', [])
 
-        # Get medicine details and format items
+        # Get medicine details and format items as key-value pairs
         cur = mysql.connection.cursor()
         try:
+            item_count = 0
             for i in range(len(medicine_ids)):
                 if not medicine_ids[i]:
                     continue
@@ -498,7 +441,9 @@ def print_bill_format():
                 med_result = cur.fetchone()
                 
                 if med_result:
-                    item = {
+                    item_count += 1
+                    item_key = f"item_{item_count}"
+                    item_data = {
                         "medicine_name": med_result['ratelist_name'],
                         "quantity": str(quantities[i]) if i < len(quantities) else "0",
                         "amount": "{:.2f}".format(float(amounts[i])) if i < len(amounts) and amounts[i] else "0.00",
@@ -507,22 +452,17 @@ def print_bill_format():
                     
                     # Add discount if present
                     if i < len(discounts) and discounts[i]:
-                        item["discount"] = "{:.2f}".format(float(discounts[i]))
+                        item_data["discount"] = "{:.2f}".format(float(discounts[i]))
                     
-                    formatted_bill["items"].append(item)
+                    formatted_bill["items"][item_key] = item_data
             
-            # Calculate total amount
-            total = sum(float(item["net_amount"]) for item in formatted_bill["items"])
-            formatted_bill["summary"]["totalAmount"] = "{:.2f}".format(total)
+            # Calculate totals
+            total_amount = 0.0
+            for item_key, item_data in formatted_bill["items"].items():
+                total_amount += float(item_data["net_amount"])
             
-            # Add total items count if available
-            if formatted_bill["items"]:
-                formatted_bill["summary"]["totalItems"] = str(len(formatted_bill["items"]))
-            
-            # Print formatted bill data
-            print("\n=== FORMATTED BILL DATA ===")
-            print(json.dumps(formatted_bill, indent=2))
-            print("=== END OF FORMATTED BILL DATA ===\n")
+            formatted_bill["summary"]["totalAmount"] = "{:.2f}".format(total_amount)
+            formatted_bill["summary"]["totalItems"] = str(len(formatted_bill["items"]))
             
             return jsonify(formatted_bill)
             
