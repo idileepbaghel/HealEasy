@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, flash, url_for
+from flask import Blueprint, render_template, request, jsonify, flash, url_for, session
 from application.extensions import mysql
 import json
 
@@ -60,31 +60,27 @@ def generate_bill_post():
         print(f"Medicine IDs: {medicine_ids}")
         print(f"Quantities: {quantities}")
         print(f"Amounts: {amounts}")
-        print(f"Net Amounts: {net_amounts}")
-        
-        # Initialize the response structure
+        print(f"Net Amounts: {net_amounts}")        # Initialize the response structure
         response_data = {
-            "timestamp": "2025-06-06T13:10:56.482Z",
-            "medicines": [],
+            "org_id": "13",
+            "username": str(session.get('username', '48')),  # Get username from session or default to '48'
+            "items": [],
             "summary": {
-                "totalItems": 0,
-                "subTotal": 0.0,
-                "totalDiscount": 0.0,
-                "totalCGST": 0.0,
-                "totalSGST": 0.0,
-                "totalIGST": 0.0,
-                "amountToBePaid": 0.0
+                "totalAmount": "0",
+                "subtotalAmount": "0",
+                "totalDiscount": "0",
+                "specialDiscount": "0",
+                "totalGst": "0",
+                "netAmount": "0"
             }
         }
-        
-        # Process medicines and get details from database
+          # Process medicines and get details from database
         cur = mysql.connection.cursor()
-        total_quantity = 0
         total_cgst = 0.0
         total_sgst = 0.0
         total_discount = 0.0
-        total_amount = 0.0
-        subtotal = 0.0
+        total_net_amount = 0.0
+        subtotal_amount = 0.0
         
         try:
             # Process each medicine entry
@@ -115,41 +111,43 @@ def generate_bill_post():
                         sgst_amount = taxable_amount * (sgst_rate / 100)
                         net_amount = taxable_amount + cgst_amount + sgst_amount
                         
-                        # Create medicine entry
+                        # Create medicine entry with string values
                         medicine_entry = {
-                            "rowIndex": i + 1,
-                            "medicineId": medicine_ids[i],
-                            "medicineName": medicine_details['ratelist_name'],
-                            "quantity": int(quantity),
-                            "price": round(unit_price, 2),
-                            "discountRate": int(discount_rate),
-                            "sgstRate": int(sgst_rate),
-                            "sgstAmount": round(sgst_amount, 2),
-                            "cgstRate": int(cgst_rate),
-                            "cgstAmount": round(cgst_amount, 2),
-                            "taxableAmount": round(taxable_amount, 2),
-                            "netAmount": round(net_amount, 2)
+                            "medicine_name": medicine_details['ratelist_name'],
+                            "quantity": str(int(quantity)),
+                            "amount": str(int(gross_amount)),
+                            "discount": str(int(discount_amount)),
+                            "cgst_percentage": str(int(cgst_rate)),
+                            "cgst_amount": "{:.2f}".format(cgst_amount),
+                            "sgst_percentage": str(int(sgst_rate)),
+                            "sgst_amount": "{:.2f}".format(sgst_amount),
+                            "taxable_amount": str(int(taxable_amount)),
+                            "net_amount": "{:.2f}".format(net_amount)
                         }
                         
-                        response_data["medicines"].append(medicine_entry)
+                        response_data["items"].append(medicine_entry)
                         
                         # Update totals
-                        total_quantity += quantity
                         total_cgst += cgst_amount
                         total_sgst += sgst_amount
                         total_discount += discount_amount
-                        total_amount += net_amount
-                        subtotal += taxable_amount
+                        total_net_amount += net_amount
+                        subtotal_amount += gross_amount
             
-            # Update summary
+            # Calculate total GST and other summary values
+            total_gst = total_cgst + total_sgst
+            total_amount = subtotal_amount - total_discount  # Amount after discount but before tax
+            
+            # Update summary with string values
             response_data["summary"] = {
-                "totalItems": int(total_quantity),
-                "subTotal": round(subtotal, 2),
-                "totalDiscount": round(total_discount, 2),
-                "totalCGST": round(total_cgst, 2),
-                "totalSGST": round(total_sgst, 2),
-                "totalIGST": 0.0,  # Assuming no IGST for now
-                "amountToBePaid": round(total_amount, 2)
+                "totalAmount": str(int(total_amount)),
+                "subtotalAmount": str(int(subtotal_amount)),
+                "totalDiscount": str(int(total_discount)),
+                "specialDiscount": "0",
+                "igstPercentage": "0",
+                "igstAmount": "0",
+                "totalGst": "{:.2f}".format(total_gst),
+                "netAmount": "{:.2f}".format(total_net_amount)
             }
             
         finally:
@@ -159,14 +157,34 @@ def generate_bill_post():
         print(json.dumps(response_data, indent=2))
         print("=== END OF RESPONSE ===\n")
         
-        return jsonify(response_data)
+        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
+            return jsonify(response_data)
+        
+        # Otherwise render template with the data
+        # Convert response_data to JSON string for use in template
+        json_data = json.dumps(response_data)
+        
+        print(json_data,'baghel')
+        print(response_data,'dileep')
+
+        return render_template('billing.html', 
+                             bill_data=response_data,  # Pass as Python object
+                             json_data=json_data)      # Pass as JSON string
         
     except Exception as e:
         print(f"Error processing bill: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f'Error processing bill: {str(e)}'
-        }), 500
+        
+        # Return appropriate error response based on request type
+        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
+            return jsonify({
+                'success': False,
+                'message': f'Error processing bill: {str(e)}'
+            }), 500
+        else:
+            return render_template('billing.html', 
+                                 error=f'Error processing bill: {str(e)}',
+                                 bill_data=None,
+                                 json_data=None), 500
 
 
 @billing.route('/api/get_medicine_details/<int:medicine_id>', methods=['GET'])

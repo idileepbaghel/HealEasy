@@ -7,34 +7,41 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     .billing-wrapper {
-        margin-left: 250px; /* Match your sidebar width */
+        margin-left: 250px;
+        /* Match your sidebar width */
         padding: 20px;
         transition: margin 0.3s;
     }
+
     .medicine-row {
         margin-bottom: 1rem;
     }
+
     .form-label {
         margin-bottom: 0.5rem;
         font-size: 0.875rem;
     }
+
     .form-control {
         font-size: 0.875rem;
     }
-    
+
     @media (max-width: 1400px) {
         .form-label {
             font-size: 0.8rem;
         }
+
         .form-control {
             padding: 0.25rem 0.5rem;
         }
-        .col-lg-1, .col-md-1 {
+
+        .col-lg-1,
+        .col-md-1 {
             padding-left: 4px;
             padding-right: 4px;
         }
     }
-    
+
     @media (max-width: 1199.98px) {
         .billing-wrapper {
             margin-left: 20px !important;
@@ -48,9 +55,11 @@
             margin-left: 0;
             padding: 10px;
         }
+
         #medicineRows {
             overflow-x: auto;
         }
+
         .medicine-row {
             min-width: 992px;
         }
@@ -67,25 +76,32 @@
                     <div class="card shadow">
                         <div class="card-header bg-gradient-primary text-white">
                             <h4 class="mb-0">Generate Bill</h4>
+                                
                         </div>
                         <div class="card-body">
+                            
                             <form id="billForm" action="{{ url_for('billing.generate_bill_post') }}" method="POST">
+                                
                                 <div id="medicineRows">
                                     <div class="medicine-row row g-3 mb-3">
                                         <div class="col-lg-2 col-md-6">
-                                            <label class="form-label d-block mb-2">Medicine Name</label>                     
+                                            
+                                            <label class="form-label d-block mb-2">Medicine Name</label>
                                             <div class="dropdown-container position-relative">
-                                                <input type="text" class="form-control medicine-search" placeholder="Search medicine..."
-                                                    id="medicineSearchInput">                                                
-                                                    <div class="dropdown-list position-absolute w-100 d-none" id="medicineDropdown" style="position: absolute; z-index: 1000; background: white; border: 1px solid #ced4da; border-radius: 0.25rem; overflow-y: visible;">
+                                                <input type="text" class="form-control medicine-search"
+                                                    placeholder="Search medicine..." id="medicineSearchInput">
+                                                <div class="dropdown-list position-absolute w-100 d-none"
+                                                    id="medicineDropdown"
+                                                    style="position: absolute; z-index: 1000; background: white; border: 1px solid #ced4da; border-radius: 0.25rem; overflow-y: visible;">
                                                 </div>
-                                                <select class="form-select medicine-select d-none" name="medicine[]" required
-                                                    id="actualMedicineSelect">
+                                                <select class="form-select medicine-select d-none" name="medicine[]"
+                                                    required id="actualMedicineSelect">
                                                     <option value="">Select Medicine</option><br>
                                                     {% for med in med_names %}
                                                     <option value="{{ med.id }}" data-price="{{ med.amount }}"
                                                         data-discount="{{ med.discount }}" data-cgst="{{ med.cgst }}"
-                                                        data-sgst="{{ med.sgst }}" data-quantity="{{ med.quantity_per_pack }}">
+                                                        data-sgst="{{ med.sgst }}"
+                                                        data-quantity="{{ med.quantity_per_pack }}">
                                                         {{ med.ratelist_name }}
                                                     </option>
                                                     {% endfor %}
@@ -109,35 +125,38 @@
                                         </div>
                                         <div class="col-lg-1 col-md-2">
                                             <label class="form-label d-block mb-2">SGST(%)</label>
-                                            <input type="number" class="form-control sgst-rate" name="SGST" value="" min="0" max="100"
-                                                readonly>
+                                            <input type="number" class="form-control sgst-rate" name="SGST" value=""
+                                                min="0" max="100" readonly>
                                         </div>
                                         <div class="col-lg-1 col-md-2">
                                             <label class="form-label d-block mb-2">SGST Amt</label>
-                                            <input type="text" class="form-control sgst-amount" name="sgst_amount[]" readonly>
-                                        </div>
-                                        <div class="col-lg-1 col-md-2">
-                                            <label class="form-label d-block mb-2">CGST(%)</label>
-                                            <input type="number" class="form-control cgst-rate" name="CGST" value="" min="0" max="100"
+                                            <input type="text" class="form-control sgst-amount" name="sgst_amount[]"
                                                 readonly>
                                         </div>
                                         <div class="col-lg-1 col-md-2">
+                                            <label class="form-label d-block mb-2">CGST(%)</label>
+                                            <input type="number" class="form-control cgst-rate" name="CGST" value=""
+                                                min="0" max="100" readonly>
+                                        </div>
+                                        <div class="col-lg-1 col-md-2">
                                             <label class="form-label d-block mb-2">CGST Amt</label>
-                                            <input type="text" class="form-control cgst-amount" name="cgst_amount[]" readonly>
+                                            <input type="text" class="form-control cgst-amount" name="cgst_amount[]"
+                                                readonly>
                                         </div>
                                         <div class="col-lg-1 col-md-2">
                                             <label class="form-label d-block mb-2">Taxable Amt</label>
-                                            <input type="text" class="form-control taxable-amount" name="taxable_amount[]" readonly>
+                                            <input type="text" class="form-control taxable-amount"
+                                                name="taxable_amount[]" readonly>
                                         </div>
                                         <div class="col-lg-1 col-md-2">
                                             <label class="form-label d-block mb-2">Net Amt</label>
-                                            <input type="text" class="form-control net-amount" name="net_amount[]" readonly>
-                                        </div>                                        
+                                            <input type="text" class="form-control net-amount" name="net_amount[]"
+                                                readonly>
+                                        </div>
                                         <div class="col-auto d-flex align-items-end">
-                                            <button type="button" class="btn btn-danger remove-row mb-2" style="display: none;"
-                                                    data-bs-toggle="tooltip" 
-                                                    data-bs-placement="top" 
-                                                    title="Remove Row">
+                                            <button type="button" class="btn btn-danger remove-row mb-2"
+                                                style="display: none;" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Remove Row">
                                                 <i class="bi bi-dash-circle-fill"></i>
                                             </button>
                                         </div>
@@ -153,47 +172,63 @@
                                 <div class="card mt-4">
                                     <div class="card-header bg-gradient-secondary text-white">
                                         <h5 class="mb-0">Bill Summary</h5>
-                                    </div>                    
+                                    </div>
                                     <div class="card-body">
                                         <div class="row justify-content-end">
                                             <div class="col-lg-5 col-md-6">
                                                 <div class="row g-3">
                                                     <div class="col-sm-6">
                                                         <div class="mb-2">
-                                                            <p><strong>CGST:</strong> ₹<span id="totalCGST">0.00</span></p>
-                                                            <p><strong>SGST:</strong> ₹<span id="totalSGST">0.00</span></p>
-                                                            <p><strong>IGST:</strong> ₹<span id="totalIGST">0.00</span></p>
+                                                            <p><strong>CGST:</strong> ₹<span id="totalCGST">0.00</span>
+                                                            </p>
+                                                            <p><strong>SGST:</strong> ₹<span id="totalSGST">0.00</span>
+                                                            </p>
+                                                            <p><strong>IGST:</strong> ₹<span id="totalIGST">0.00</span>
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                    <div class="col-sm-6">                                                          <p><strong>Sub Total:</strong> ₹<span id="subTotal">0.00</span></p>
+                                                    <div class="col-sm-6">
+                                                        <p><strong>Sub Total:</strong> ₹<span id="subTotal">0.00</span>
+                                                        </p>
                                                         <p><strong>Total Items:</strong> <span id="totalItems">0</span></p>
                                                         <p><strong>Total Discount:</strong> ₹<span id="totalDiscount">0.00</span></p>
-                                                        <p><strong>Special Discount (₹):</strong> <input type="number" id="specialDiscount" class="form-control form-control-sm" value="0" min="0" style="width: 100px; display: inline-block;"></p>
-                                                        <p><strong>Amount to be Paid:</strong> ₹<span id="amountToBePaid">0.00</span></p>
+                                                        <p><strong>Special Discount (₹):</strong> <input type="number" id="specialDiscount" class="form-control form-control-sm" value="0.00" min="0" style="width: 100px; display: inline-block;"></p>
+                                                        <p><strong>Amount to be Paid:</strong> ₹<spann id="amountToBePaid">0.00</spann></p>
                                                         <div class="mb-2">
-                    <div class="text-end mt-3">
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="bi bi-printer"></i> Generate Bill
-                        </button>
-                    </div>
-                </form>
-                </div>
+                                                            <div class="text-end mt-3">
+                                                                <button type="submit" class="btn bg-gradient-primary">
+                                                                    <i class="bi bi-printer"></i> Generate Bill
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                            </form>
+                            {% if bill_data %}
+                            {% for data in  bill_data %}
+                                <p style="z-index: 999;">{{ data.username }}</p>
+                                <p style="z-index: 999;">{{ data.items }}</p>
+                            {% endfor %}
+                            {% else %}
+                            <p>data not found</p>
+                            {% endif %}
+                            
+                        </div>
 
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    </div>
-    </div>
-    </div>
-
-
     
-    <script>    document.addEventListener('DOMContentLoaded', function () {
+</div>
+
+
+
+<script>    document.addEventListener('DOMContentLoaded', function () {
         console.log('Script initialized');
         // Initialize tooltips
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-        
+
         const addRowBtn = document.getElementById('addRow');
         const form = document.getElementById('billForm');
         const specialDiscountInput = document.getElementById('specialDiscount');
@@ -206,7 +241,7 @@
 
         console.log('Add Row Button found:', !!addRowBtn);
         console.log('Form found:', !!form);
-        
+
         // Initialize remove buttons
         updateRemoveButtons();
 
@@ -385,7 +420,7 @@
                 }
             });
         }
-    }    function addNewRow() {
+    } function addNewRow() {
         const container = document.getElementById('medicineRows');
         const firstRow = document.querySelector('.medicine-row');
 
@@ -416,10 +451,11 @@
             if (searchInput) searchInput.value = '';
 
             container.appendChild(newRow);
-            console.log('New row added');            setupSearchableDropdown(newRow);
+            console.log('New row added');
+            setupSearchableDropdown(newRow);
             setupEventListeners();
             updateRemoveButtons();
-            
+
             // Initialize tooltips for the new row
             const newTooltips = newRow.querySelectorAll('[data-bs-toggle="tooltip"]');
             newTooltips.forEach(element => new bootstrap.Tooltip(element));
@@ -504,7 +540,8 @@
         let price = parseFloat(amountInput.value) || 0;
         let discount = parseFloat(discountInput.value) || 0;
         let cgstRate = parseFloat(cgstRateInput.value) || 0;
-        let sgstRate = parseFloat(sgstRateInput.value) || 0;        if (medicineId) {
+        let sgstRate = parseFloat(sgstRateInput.value) || 0;
+        if (medicineId) {
             const selectedOption = Array.from(select.options).find(option => option.value === medicineId);
             if (selectedOption) {
                 // Get price per unit
@@ -514,30 +551,31 @@
                 sgstRate = parseFloat(selectedOption.dataset.sgst) || 0;
             }
         }
-          // Calculate total price (price per unit * quantity)
+        // Calculate total price (price per unit * quantity)
         let itemTotal = price * quantity;
         amountInput.value = (price * quantity).toFixed(2);  // Update price field to show price × quantity
 
         // Calculate discount on base price
         let itemDiscount = (itemTotal * discount) / 100;
-        
+
         // Calculate taxable amount (price after discount)
         let taxableAmount = itemTotal - itemDiscount;
         // Calculate GST on taxable amount
         let itemCgst = (taxableAmount * cgstRate) / 100;
         let itemSgst = (taxableAmount * sgstRate) / 100;
-        
+
         // Calculate final net amount (taxable amount + GSTs)
         let itemNet = taxableAmount + itemCgst + itemSgst;
 
         if (isPackSizeMode) {
-            const packSizeDiscount = Math.floor(quantity / packSize) * discount;
-            
+            const packSizeDiscount = Math.floor(quantity / packSize);
+
             taxableAmount = itemTotal - itemDiscount;
             itemCgst = (taxableAmount * cgstRate) / 100;
             itemSgst = (taxableAmount * sgstRate) / 100;
             itemNet = taxableAmount + itemCgst + itemSgst;
-        }        amountInput.value = (price * quantity).toFixed(2);  // Show price x quantity
+        }
+        amountInput.value = (price * quantity).toFixed(2);  // Show price x quantity
         discountInput.value = discount.toFixed(2);
         cgstRateInput.value = cgstRate.toFixed(2);
         sgstRateInput.value = sgstRate.toFixed(2);
@@ -547,7 +585,7 @@
         netAmountInput.value = itemNet.toFixed(2);
 
         calculateTotals();
-    }    function calculateAllRows() {
+    } function calculateAllRows() {
         document.querySelectorAll('.medicine-row').forEach(row => {
             calculateRow(row);
         });
@@ -579,10 +617,10 @@
             const discount = parseFloat(row.querySelector('.discount').value) || 0;
             const cgstAmount = parseFloat(row.querySelector('.cgst-amount').value) || 0;
             const sgstAmount = parseFloat(row.querySelector('.sgst-amount').value) || 0;
-            const netAmount = parseFloat(row.querySelector('.net-amount').value) || 0;            totalItems += quantity;
+            const netAmount = parseFloat(row.querySelector('.net-amount').value) || 0; totalItems += quantity;
             const taxableAmount = parseFloat(row.querySelector('.taxable-amount').value) || 0;
             subTotal += taxableAmount; // Use taxable amount for subtotal
-            totalDiscount += (amount * discount / 100) * quantity;
+            totalDiscount += (amount * discount / 100);
             totalCGST += cgstAmount;
             totalSGST += sgstAmount;
         });
@@ -592,14 +630,14 @@
         document.getElementById('totalCGST').textContent = totalCGST.toFixed(2);
         document.getElementById('totalSGST').textContent = totalSGST.toFixed(2);
         document.getElementById('totalIGST').textContent = totalIGST.toFixed(2);
-        document.getElementById('subTotal').textContent = subTotal.toFixed(2);        document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('subTotal').textContent = subTotal.toFixed(2); document.getElementById('totalItems').textContent = totalItems;
         document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);        // Calculate total amount to be paid (sum of all net amounts - special discount)
         let amountToBePaid = 0;
         document.querySelectorAll('.medicine-row').forEach(row => {
             const netAmount = parseFloat(row.querySelector('.net-amount').value) || 0;
             amountToBePaid += netAmount;
         });
-        
+
         // Subtract special discount
         const specialDiscount = parseFloat(document.getElementById('specialDiscount').value) || 0;
         amountToBePaid = Math.max(0, amountToBePaid - specialDiscount);
@@ -626,32 +664,30 @@
         document.getElementById('finalNetAmount').textContent = finalNetAmount.toFixed(2);
     });
 
-    
-    </script>
-    <script>
-document.getElementById('billForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const formData = new FormData(this);
 
-    console.log('Submitting form data...');
+</script>
+<script>
+    document.getElementById('billForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
 
-    fetch('/generate-bill', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        console.log('Raw response:', response);
-        return response.json();
-    })
-    .then(data => {
-        console.log('Parsed response:', data);
-        
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error generating bill. Please try again.');
+        console.log('Submitting form data...');
+
+        fetch('/generate-bill', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                console.log('Raw response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Parsed response:', data);
+
+            })
     });
-});
+
+    
 </script>
 
 {% endblock %}
