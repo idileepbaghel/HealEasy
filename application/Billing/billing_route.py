@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, flash, url_for, session
 from application.extensions import mysql
 import json
+import requests
 
 billing = Blueprint('billing', __name__)
 
@@ -62,7 +63,7 @@ def generate_bill_post():
         print(f"Amounts: {amounts}")
         print(f"Net Amounts: {net_amounts}")        # Initialize the response structure
         response_data = {
-            "org_id": "13",
+            "org_id": 11,
             "username": str(session.get('username', '48')),  # Get username from session or default to '48'
             "items": [],
             "summary": {
@@ -103,7 +104,6 @@ def generate_bill_post():
                         cgst_rate = float(medicine_details['cgst_rate'])
                         sgst_rate = float(medicine_details['sgst_rate'])
                         
-                        # Calculate amounts
                         gross_amount = quantity * unit_price
                         discount_amount = gross_amount * (discount_rate / 100)
                         taxable_amount = gross_amount - discount_amount
@@ -111,7 +111,6 @@ def generate_bill_post():
                         sgst_amount = taxable_amount * (sgst_rate / 100)
                         net_amount = taxable_amount + cgst_amount + sgst_amount
                         
-                        # Create medicine entry with string values
                         medicine_entry = {
                             "medicine_name": medicine_details['ratelist_name'],
                             "quantity": str(int(quantity)),
@@ -134,11 +133,9 @@ def generate_bill_post():
                         total_net_amount += net_amount
                         subtotal_amount += gross_amount
             
-            # Calculate total GST and other summary values
             total_gst = total_cgst + total_sgst
-            total_amount = subtotal_amount - total_discount  # Amount after discount but before tax
+            total_amount = subtotal_amount - total_discount 
             
-            # Update summary with string values
             response_data["summary"] = {
                 "totalAmount": str(int(total_amount)),
                 "subtotalAmount": str(int(subtotal_amount)),
@@ -149,32 +146,43 @@ def generate_bill_post():
                 "totalGst": "{:.2f}".format(total_gst),
                 "netAmount": "{:.2f}".format(total_net_amount)
             }
-            
         finally:
-            cur.close()
+                cur.close()
         
         print("\n=== GENERATED RESPONSE ===")
         print(json.dumps(response_data, indent=2))
         print("=== END OF RESPONSE ===\n")
+
+        url = 'https://billing-system-cdfva6d4d6cxb8dm.canadacentral-01.azurewebsites.net/api/bills'  
+        
+        # Add required headers including org_key
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Api-Key': 'c21a767f5c242f925aefa1ed670c8fc5599d788c744a31a8'
+        }
+        
+        try:
+            api_response = requests.post(url, json=response_data, headers=headers)
+            print(f"API Response Status: {api_response.status_code}")
+            if api_response.status_code == 200:
+                print("API Response:", api_response.json())
+            else:
+                print("API Response Text:", api_response.text)
+        except requests.exceptions.RequestException as e:
+            print(f"API Request failed: {str(e)}")
         
         if request.headers.get('Content-Type') == 'application/json' or request.is_json:
             return jsonify(response_data)
         
-        # Otherwise render template with the data
-        # Convert response_data to JSON string for use in template
         json_data = json.dumps(response_data)
         
-        print(json_data,'baghel')
-        print(response_data,'dileep')
-
         return render_template('billing.html', 
-                             bill_data=response_data,  # Pass as Python object
-                             json_data=json_data)      # Pass as JSON string
+                             bill_data=response_data, 
+                             json_data=json_data)     
         
     except Exception as e:
         print(f"Error processing bill: {str(e)}")
         
-        # Return appropriate error response based on request type
         if request.headers.get('Content-Type') == 'application/json' or request.is_json:
             return jsonify({
                 'success': False,
@@ -207,7 +215,6 @@ def get_medicine_details(medicine_id):
         
         result = cur.fetchone()
         if result and result['pharmacy_medicine_id']:
-            # Get the available stock quantity
             cur.execute("""
                 SELECT SUM(COALESCE(quantity, 0)) as available_quantity
                 FROM pharmacy_stock

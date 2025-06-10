@@ -517,10 +517,10 @@
                 }
             });
         }
-    }
-
-    function calculateRow(row) {
-        if (!row) return; const select = row.querySelector('.medicine-select');
+    }    function calculateRow(row) {
+        if (!row) return; 
+        
+        const select = row.querySelector('.medicine-select');
         const hiddenInput = row.querySelector('input[name="medicine[]"]');
         const quantityInput = row.querySelector('.quantity');
         const amountInput = row.querySelector('.amount');
@@ -535,12 +535,12 @@
         const medicineId = hiddenInput.value;
         const quantity = parseFloat(quantityInput.value) || 0;
         const packSize = parseFloat(select.options[select.selectedIndex].dataset.quantity) || 1;
-        const isPackSizeMode = packSize > 1;
 
         let price = parseFloat(amountInput.value) || 0;
         let discount = parseFloat(discountInput.value) || 0;
         let cgstRate = parseFloat(cgstRateInput.value) || 0;
         let sgstRate = parseFloat(sgstRateInput.value) || 0;
+        
         if (medicineId) {
             const selectedOption = Array.from(select.options).find(option => option.value === medicineId);
             if (selectedOption) {
@@ -551,41 +551,35 @@
                 sgstRate = parseFloat(selectedOption.dataset.sgst) || 0;
             }
         }
-        // Calculate total price (price per unit * quantity)
+        
+        // 1. Keep the price same - Calculate total price (price per unit * quantity)
         let itemTotal = price * quantity;
         amountInput.value = (price * quantity).toFixed(2);  // Update price field to show price × quantity
 
-        // Calculate discount on base price
+        // 2. Keep the quantity same (no changes needed)
+        
+        // Calculate GST amounts first (on original price without discount)
+        let itemCgst = (itemTotal * cgstRate) / 100;
+        let itemSgst = (itemTotal * sgstRate) / 100;
+        
+        // 3. Taxable amount = price (without discount) - GSTs applied
+        let taxableAmount = itemTotal - itemCgst - itemSgst;
+        
+        // 7. Net amount = price (without discount) - discount%
         let itemDiscount = (itemTotal * discount) / 100;
+        let itemNet = itemTotal - itemDiscount;
 
-        // Calculate taxable amount (price after discount)
-        let taxableAmount = itemTotal - itemDiscount;
-        // Calculate GST on taxable amount
-        let itemCgst = (taxableAmount * cgstRate) / 100;
-        let itemSgst = (taxableAmount * sgstRate) / 100;
-
-        // Calculate final net amount (taxable amount + GSTs)
-        let itemNet = taxableAmount + itemCgst + itemSgst;
-
-        if (isPackSizeMode) {
-            const packSizeDiscount = Math.floor(quantity / packSize);
-
-            taxableAmount = itemTotal - itemDiscount;
-            itemCgst = (taxableAmount * cgstRate) / 100;
-            itemSgst = (taxableAmount * sgstRate) / 100;
-            itemNet = taxableAmount + itemCgst + itemSgst;
-        }
-        amountInput.value = (price * quantity).toFixed(2);  // Show price x quantity
+        // Update all fields
         discountInput.value = discount.toFixed(2);
         cgstRateInput.value = cgstRate.toFixed(2);
         sgstRateInput.value = sgstRate.toFixed(2);
         cgstAmountInput.value = itemCgst.toFixed(2);
         sgstAmountInput.value = itemSgst.toFixed(2);
-        taxableAmountInput.value = (itemTotal - itemDiscount).toFixed(2);
+        taxableAmountInput.value = taxableAmount.toFixed(2);
         netAmountInput.value = itemNet.toFixed(2);
 
         calculateTotals();
-    } function calculateAllRows() {
+    }function calculateAllRows() {
         document.querySelectorAll('.medicine-row').forEach(row => {
             calculateRow(row);
         });
@@ -630,7 +624,8 @@
         document.getElementById('totalCGST').textContent = totalCGST.toFixed(2);
         document.getElementById('totalSGST').textContent = totalSGST.toFixed(2);
         document.getElementById('totalIGST').textContent = totalIGST.toFixed(2);
-        document.getElementById('subTotal').textContent = subTotal.toFixed(2); document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('subTotal').textContent = subTotal.toFixed(2); 
+        document.getElementById('totalItems').textContent = totalItems;
         document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);        // Calculate total amount to be paid (sum of all net amounts - special discount)
         let amountToBePaid = 0;
         document.querySelectorAll('.medicine-row').forEach(row => {
