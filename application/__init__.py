@@ -27,6 +27,9 @@ from .action.api import api_bp
 from .action.todo import todo
 
 def create_app():
+    # Load environment variables from .env file
+    load_dotenv()
+    
     app = Flask(__name__, 
                 template_folder='package/templates/',
                 static_folder='package/static/', 

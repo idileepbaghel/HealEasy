@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, flash, url_for, 
 from application.extensions import mysql
 import json
 import requests
+import os
 
 billing = Blueprint('billing', __name__)
 
@@ -165,13 +166,20 @@ def generate_bill_post():
         
         print("\n=== GENERATED RESPONSE ===")
         print(json.dumps(response_data, indent=2))
-        print("=== END OF RESPONSE ===\n")
-
-        # Call external API
-        url = 'https://billing-system-cdfva6d4d6cxb8dm.canadacentral-01.azurewebsites.net/api/bills'  
+        print("=== END OF RESPONSE ===\n")        # Call external API
+        url = os.getenv('BILLING_API_URL')
+        api_key = os.getenv('BILLING_API_KEY')
+        
+        if not url or not api_key:
+            print("Error: Missing API configuration in environment variables")
+            return jsonify({
+                'success': False,
+                'message': 'API configuration error'
+            }), 500
+        
         headers = {
             'Content-Type': 'application/json',
-            'X-Api-Key': 'c21a767f5c242f925aefa1ed670c8fc5599d788c744a31a8'
+            'X-Api-Key': api_key
         }
         
         try:
