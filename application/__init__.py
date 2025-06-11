@@ -1,5 +1,6 @@
 from flask import Flask
 from config import Config
+from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from .extensions import mysql, jwt
@@ -33,7 +34,8 @@ def create_app():
     app.config.from_object(Config)
     mysql.init_app(app)
     jwt.init_app(app)
-    
+    CORS(app, resources={r"/*": {"origins": "*"}})
+
     blueprints = [
         auth_bp,
         data_fetch,

@@ -94,7 +94,7 @@
                                                     id="medicineDropdown"
                                                     style="position: absolute; z-index: 1000; background: white; border: 1px solid #ced4da; border-radius: 0.25rem; overflow-y: visible;">
                                                 </div>
-                                                <select class="form-select medicine-select d-none" name="medicine[]"
+                                                <select class="form-select medicine-select d-none"
                                                     required id="actualMedicineSelect">
                                                     <option value="">Select Medicine</option><br>
                                                     {% for med in med_names %}
@@ -669,17 +669,22 @@
         console.log('Submitting form data...');
 
         fetch('/generate-bill', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => {
-                console.log('Raw response:', response);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Parsed response:', data);
-
-            })
+    method: 'POST',
+    body: formData,
+    headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+    }
+})
+.then(response => response.json())
+.then(data => {
+    console.log(data)
+    if (data.success && data.action === 'open_new_window') {
+        window.open(data.redirect_url, '_blank');
+    }
+})
+.catch(error => {
+    console.error('Error:', error);
+});
     });
 
     

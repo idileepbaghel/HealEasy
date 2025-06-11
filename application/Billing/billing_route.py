@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, flash, url_for, session
+from flask import Blueprint, render_template, request, jsonify, flash, url_for, session, redirect
 from application.extensions import mysql
 import json
 import requests
@@ -56,15 +56,18 @@ def generate_bill_post():
         cgst_amounts = request.form.getlist('cgst_amount[]')
         taxable_amounts = request.form.getlist('taxable_amount[]')
         net_amounts = request.form.getlist('net_amount[]')
+
+        print(medicine_ids,'dileep')
         
         # Debug prints
         print(f"Medicine IDs: {medicine_ids}")
         print(f"Quantities: {quantities}")
         print(f"Amounts: {amounts}")
-        print(f"Net Amounts: {net_amounts}")        # Initialize the response structure
+        print(f"Net Amounts: {net_amounts}")
+        
+        # Initialize the response structure
         response_data = {
-            "org_id": 11,
-            "username": str(session.get('username', '48')),  # Get username from session or default to '48'
+            "username": str(session.get('username', '48')),
             "items": [],
             "summary": {
                 "totalAmount": "0",
@@ -75,7 +78,8 @@ def generate_bill_post():
                 "netAmount": "0"
             }
         }
-          # Process medicines and get details from database
+        
+        # Process medicines and get details from database
         cur = mysql.connection.cursor()
         total_cgst = 0.0
         total_sgst = 0.0
@@ -94,7 +98,6 @@ def generate_bill_post():
                         FROM pharmacy_ratelist 
                         WHERE id = %s
                     """, (medicine_ids[i],))
-                    
                     medicine_details = cur.fetchone()
                     
                     if medicine_details:
@@ -104,12 +107,22 @@ def generate_bill_post():
                         cgst_rate = float(medicine_details['cgst_rate'])
                         sgst_rate = float(medicine_details['sgst_rate'])
                         
+                        # Keep price same (gross amount)
                         gross_amount = quantity * unit_price
+                        
+                        # Calculate discount amount from gross amount
                         discount_amount = gross_amount * (discount_rate / 100)
-                        taxable_amount = gross_amount - discount_amount
-                        cgst_amount = taxable_amount * (cgst_rate / 100)
-                        sgst_amount = taxable_amount * (sgst_rate / 100)
-                        net_amount = taxable_amount + cgst_amount + sgst_amount
+                        
+                        # Net amount = price (without discount) - discount%
+                        net_amount = gross_amount - discount_amount
+                        
+                        # Taxable amount = price (without discount) - GSTs applied
+                        # SGST = price - gst% of price, CGST = price - gst% of price
+                        sgst_amount = gross_amount * (sgst_rate / 100)
+                        cgst_amount = gross_amount * (cgst_rate / 100)
+                        
+                        # Taxable amount is the amount before GST calculation
+                        taxable_amount = gross_amount - sgst_amount - cgst_amount
                         
                         medicine_entry = {
                             "medicine_name": medicine_details['ratelist_name'],
@@ -146,16 +159,16 @@ def generate_bill_post():
                 "totalGst": "{:.2f}".format(total_gst),
                 "netAmount": "{:.2f}".format(total_net_amount)
             }
+            
         finally:
-                cur.close()
+            cur.close()
         
         print("\n=== GENERATED RESPONSE ===")
         print(json.dumps(response_data, indent=2))
         print("=== END OF RESPONSE ===\n")
 
+        # Call external API
         url = 'https://billing-system-cdfva6d4d6cxb8dm.canadacentral-01.azurewebsites.net/api/bills'  
-        
-        # Add required headers including org_key
         headers = {
             'Content-Type': 'application/json',
             'X-Api-Key': 'c21a767f5c242f925aefa1ed670c8fc5599d788c744a31a8'
@@ -164,24 +177,47 @@ def generate_bill_post():
         try:
             api_response = requests.post(url, json=response_data, headers=headers)
             print(f"API Response Status: {api_response.status_code}")
+            
             if api_response.status_code == 200:
-                print("API Response:", api_response.json())
+                api_data = api_response.json()
+                print("API Response:", api_data)
+                
+                # Check if redirect_url exists and open in new window
+                if 'redirect_url' in api_data:
+                    print(f"Opening in new window: {api_data['redirect_url']}")
+                    
+                    # Check if this is an AJAX request
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        # Return JSON response for AJAX requests
+                        return jsonify({
+                            'success': True,
+                            'redirect_url': api_data['redirect_url'],
+                            'action': 'open_new_window'
+                        })
+                    
+                    
             else:
                 print("API Response Text:", api_response.text)
+                
         except requests.exceptions.RequestException as e:
             print(f"API Request failed: {str(e)}")
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse API response JSON: {str(e)}")
         
+        # Handle response based on request type
         if request.headers.get('Content-Type') == 'application/json' or request.is_json:
             return jsonify(response_data)
         
+        # For regular form submissions, render template
         json_data = json.dumps(response_data)
-        
         return render_template('billing.html', 
                              bill_data=response_data, 
                              json_data=json_data)     
         
     except Exception as e:
         print(f"Error processing bill: {str(e)}")
+        import traceback
+        traceback.print_exc()
         
         if request.headers.get('Content-Type') == 'application/json' or request.is_json:
             return jsonify({
