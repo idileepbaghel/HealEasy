@@ -166,7 +166,7 @@ def generate_bill_post():
         
         print("\n=== GENERATED RESPONSE ===")
         print(json.dumps(response_data, indent=2))
-        print("=== END OF RESPONSE ===\n")        # Call external API
+        print("=== END OF RESPONSE ===\n")        
         url = os.getenv('BILLING_API_URL')
         api_key = os.getenv('BILLING_API_KEY')
         
