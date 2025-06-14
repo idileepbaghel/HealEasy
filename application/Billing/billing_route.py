@@ -6,25 +6,25 @@ import os
 
 billing = Blueprint('billing', __name__)
 
-@billing.route('/generate_bill', methods=['GET'])
-def generate_bill():
-    """Route to display billing form and fetch medicine data"""
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT 
-            id,
-            ratelist_name,
-            amount,
-            COALESCE(discount, 0) as discount,
-            COALESCE(cgst, 0) as cgst,
-            COALESCE(sgst, 0) as sgst,
-            COALESCE(quantity_per_pack, 1) as quantity_per_pack
-        FROM pharmacy_ratelist
-        ORDER BY ratelist_name ASC
-    """)
-    med_names = cur.fetchall()
-    cur.close()
-    return render_template('billing.html', med_names=med_names)
+# @billing.route('/generate_bill', methods=['GET'])
+# def generate_bill():
+#     """Route to display billing form and fetch medicine data"""
+#     cur = mysql.connection.cursor()
+#     cur.execute("""
+#         SELECT 
+#             id,
+#             ratelist_name,
+#             amount,
+#             COALESCE(discount, 0) as discount,
+#             COALESCE(cgst, 0) as cgst,
+#             COALESCE(sgst, 0) as sgst,
+#             COALESCE(quantity_per_pack, 1) as quantity_per_pack
+#         FROM pharmacy_ratelist
+#         ORDER BY ratelist_name ASC
+#     """)
+#     med_names = cur.fetchall()
+#     cur.close()
+#     return render_template('billing.html', med_names=med_names)
 
 @billing.route('/debug-form', methods=['POST'])
 def debug_form():
@@ -40,14 +40,14 @@ def test_route():
     print("=== TEST ROUTE HIT ===")
     return jsonify({'message': 'Billing blueprint is working!', 'method': request.method})
 
-@billing.route('/generate-bill', methods=['POST'])
+@billing.route('/generate-bill', methods=['GET','POST'])
 def generate_bill_post():
-    """Route to handle bill generation and return data in the required JSON format"""
-    print("=== ROUTE HIT: /generate-bill ===")
-    print(f"Request method: {request.method}")
-    print(f"Content type: {request.content_type}")
-    
-    try:
+    if request.method == "POST":
+        """Route to handle bill generation and return data in the required JSON format"""
+        print("=== ROUTE HIT: /generate-bill ===")
+        print(f"Request method: {request.method}")
+        print(f"Content type: {request.content_type}")
+        
         # Get all form data using getlist for arrays
         medicine_ids = request.form.getlist('medicine[]')
         quantities = request.form.getlist('quantity[]')
@@ -57,18 +57,14 @@ def generate_bill_post():
         cgst_amounts = request.form.getlist('cgst_amount[]')
         taxable_amounts = request.form.getlist('taxable_amount[]')
         net_amounts = request.form.getlist('net_amount[]')
-
-        print(medicine_ids,'dileep')
         
         # Debug prints
         print(f"Medicine IDs: {medicine_ids}")
         print(f"Quantities: {quantities}")
         print(f"Amounts: {amounts}")
-        print(f"Net Amounts: {net_amounts}")
-        
-        # Initialize the response structure
+        print(f"Net Amounts: {net_amounts}")        # Initialize the response structure
         response_data = {
-            "username": str(session.get('username', '48')),
+            "username": str(session.get('username', '48')),  # Get username from session or default to '48'
             "items": [],
             "summary": {
                 "totalAmount": "0",
@@ -87,86 +83,76 @@ def generate_bill_post():
         total_discount = 0.0
         total_net_amount = 0.0
         subtotal_amount = 0.0
-        
-        try:
-            # Process each medicine entry
-            for i in range(len(medicine_ids)):
-                if medicine_ids[i] and i < len(quantities) and quantities[i]:
-                    # Get medicine details from database
-                    cur.execute("""
-                        SELECT ratelist_name, amount as unit_price, discount as discount_rate, 
-                               cgst as cgst_rate, sgst as sgst_rate
-                        FROM pharmacy_ratelist 
-                        WHERE id = %s
-                    """, (medicine_ids[i],))
-                    medicine_details = cur.fetchone()
+
+        # Process each medicine entry
+        for i in range(len(medicine_ids)):
+            if medicine_ids[i] and i < len(quantities) and quantities[i]:
+                # Get medicine details from database
+                cur.execute("""
+                    SELECT ratelist_name, amount as unit_price, discount as discount_rate, 
+                            cgst as cgst_rate, sgst as sgst_rate
+                    FROM pharmacy_ratelist 
+                    WHERE id = %s
+                """, (medicine_ids[i],))
+                
+                medicine_details = cur.fetchone()
+                
+                if medicine_details:
+                    quantity = float(quantities[i]) if quantities[i] else 0
+                    unit_price = float(medicine_details['unit_price'])
+                    discount_rate = float(medicine_details['discount_rate'])
+                    cgst_rate = float(medicine_details['cgst_rate'])
+                    sgst_rate = float(medicine_details['sgst_rate'])
                     
-                    if medicine_details:
-                        quantity = float(quantities[i]) if quantities[i] else 0
-                        unit_price = float(medicine_details['unit_price'])
-                        discount_rate = float(medicine_details['discount_rate'])
-                        cgst_rate = float(medicine_details['cgst_rate'])
-                        sgst_rate = float(medicine_details['sgst_rate'])
-                        
-                        # Keep price same (gross amount)
-                        gross_amount = quantity * unit_price
-                        
-                        # Calculate discount amount from gross amount
-                        discount_amount = gross_amount * (discount_rate / 100)
-                        
-                        # Net amount = price (without discount) - discount%
-                        net_amount = gross_amount - discount_amount
-                        
-                        # Taxable amount = price (without discount) - GSTs applied
-                        # SGST = price - gst% of price, CGST = price - gst% of price
-                        sgst_amount = gross_amount * (sgst_rate / 100)
-                        cgst_amount = gross_amount * (cgst_rate / 100)
-                        
-                        # Taxable amount is the amount before GST calculation
-                        taxable_amount = gross_amount - sgst_amount - cgst_amount
-                        
-                        medicine_entry = {
-                            "medicine_name": medicine_details['ratelist_name'],
-                            "quantity": str(int(quantity)),
-                            "amount": str(int(gross_amount)),
-                            "discount": str(int(discount_amount)),
-                            "cgst_percentage": str(int(cgst_rate)),
-                            "cgst_amount": "{:.2f}".format(cgst_amount),
-                            "sgst_percentage": str(int(sgst_rate)),
-                            "sgst_amount": "{:.2f}".format(sgst_amount),
-                            "taxable_amount": str(int(taxable_amount)),
-                            "net_amount": "{:.2f}".format(net_amount)
-                        }
-                        
-                        response_data["items"].append(medicine_entry)
-                        
-                        # Update totals
-                        total_cgst += cgst_amount
-                        total_sgst += sgst_amount
-                        total_discount += discount_amount
-                        total_net_amount += net_amount
-                        subtotal_amount += gross_amount
-            
-            total_gst = total_cgst + total_sgst
-            total_amount = subtotal_amount - total_discount 
-            
-            response_data["summary"] = {
-                "totalAmount": str(int(total_amount)),
-                "subtotalAmount": str(int(subtotal_amount)),
-                "totalDiscount": str(int(total_discount)),
-                "specialDiscount": "0",
-                "igstPercentage": "0",
-                "igstAmount": "0",
-                "totalGst": "{:.2f}".format(total_gst),
-                "netAmount": "{:.2f}".format(total_net_amount)
-            }
-            
-        finally:
-            cur.close()
+                    gross_amount = quantity * unit_price
+                    discount_amount = gross_amount * (discount_rate / 100)
+                    taxable_amount = gross_amount - discount_amount
+                    cgst_amount = taxable_amount * (cgst_rate / 100)
+                    sgst_amount = taxable_amount * (sgst_rate / 100)
+                    net_amount = taxable_amount + cgst_amount + sgst_amount
+                    
+                    medicine_entry = {
+                        "medicine_name": medicine_details['ratelist_name'],
+                        "quantity": str(int(quantity)),
+                        "amount": str(int(gross_amount)),
+                        "discount": str(int(discount_rate)),
+                        "cgst_percentage": str(int(cgst_rate)),
+                        "cgst_amount": "{:.2f}".format(cgst_amount),
+                        "sgst_percentage": str(int(sgst_rate)),
+                        "sgst_amount": "{:.2f}".format(sgst_amount),
+                        "taxable_amount": str(int(taxable_amount)),
+                        "net_amount": "{:.2f}".format(net_amount)
+                    }
+                    
+                    response_data["items"].append(medicine_entry)
+                    
+                    # Update totals
+                    total_cgst += cgst_amount
+                    total_sgst += sgst_amount
+                    total_discount += discount_amount
+                    total_net_amount += net_amount
+                    subtotal_amount += gross_amount
         
+        total_gst = total_cgst + total_sgst
+        total_amount = subtotal_amount - total_discount 
+        
+        response_data["summary"] = {
+            "totalAmount": str(int(total_amount)),
+            "subtotalAmount": str(int(subtotal_amount)),
+            "totalDiscount": str(int(total_discount)),
+            "specialDiscount": "0",
+            "igstPercentage": "0",
+            "igstAmount": "0",
+            "totalGst": "{:.2f}".format(total_gst),
+            "netAmount": "{:.2f}".format(total_net_amount)
+        }
+        
+        cur.close()
+            
         print("\n=== GENERATED RESPONSE ===")
         print(json.dumps(response_data, indent=2))
-        print("=== END OF RESPONSE ===\n")        
+        print("=== END OF RESPONSE ===\n")
+
         url = os.getenv('BILLING_API_URL')
         api_key = os.getenv('BILLING_API_KEY')
         
@@ -182,62 +168,35 @@ def generate_bill_post():
             'X-Api-Key': api_key
         }
         
-        try:
-            api_response = requests.post(url, json=response_data, headers=headers)
-            print(f"API Response Status: {api_response.status_code}")
-            
-            if api_response.status_code == 200:
-                api_data = api_response.json()
-                print("API Response:", api_data)
-                
-                # Check if redirect_url exists and open in new window
-                if 'redirect_url' in api_data:
-                    print(f"Opening in new window: {api_data['redirect_url']}")
-                    
-                    # Check if this is an AJAX request
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        # Return JSON response for AJAX requests
-                        return jsonify({
-                            'success': True,
-                            'redirect_url': api_data['redirect_url'],
-                            'action': 'open_new_window'
-                        })
-                    
-                    
-            else:
-                print("API Response Text:", api_response.text)
-                
-        except requests.exceptions.RequestException as e:
-            print(f"API Request failed: {str(e)}")
-        except json.JSONDecodeError as e:
-            print(f"Failed to parse API response JSON: {str(e)}")
-        
-        # Handle response based on request type
-        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
-            return jsonify(response_data)
-        
-        # For regular form submissions, render template
-        json_data = json.dumps(response_data)
-        return render_template('billing.html', 
-                             bill_data=response_data, 
-                             json_data=json_data)     
-        
-    except Exception as e:
-        print(f"Error processing bill: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
-        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
-            return jsonify({
-                'success': False,
-                'message': f'Error processing bill: {str(e)}'
-            }), 500
+        api_response = requests.post(url, json=response_data, headers=headers)
+        if api_response.status_code == 200:
+            print(api_response.json()['redirect_url'])
+            return redirect(api_response.json()['redirect_url'])
+                # print(f"API Response Status: {api_response.status_code}")
+                # if api_response.status_code == 200:
+                #     print("API Response:", api_response.json())
         else:
-            return render_template('billing.html', 
-                                 error=f'Error processing bill: {str(e)}',
-                                 bill_data=None,
-                                 json_data=None), 500
+            print("API Response Text:", api_response.text)
+            return api_response.text
 
+    else:
+        """Route to display billing form and fetch medicine data"""
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT 
+                id,
+                ratelist_name,
+                amount,
+                COALESCE(discount, 0) as discount,
+                COALESCE(cgst, 0) as cgst,
+                COALESCE(sgst, 0) as sgst,
+                COALESCE(quantity_per_pack, 1) as quantity_per_pack
+            FROM pharmacy_ratelist
+            ORDER BY ratelist_name ASC
+        """)
+        med_names = cur.fetchall()
+        cur.close()
+        return render_template('billing.html', med_names=med_names)
 
 @billing.route('/api/get_medicine_details/<int:medicine_id>', methods=['GET'])
 def get_medicine_details(medicine_id):

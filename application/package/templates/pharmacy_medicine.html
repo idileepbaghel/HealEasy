@@ -6,9 +6,7 @@
 
 <div class="container-sm mt-8 px-8">
     <div class="row">
-        <div class="col-lg-12 offset-lg-1">
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
+        <div class="col-lg-12 offset-lg-1"> {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             {% for category, message in messages %}
             <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
@@ -42,12 +40,12 @@
                     <tr>
                         <th>S.no</th>
                         <th>Medicine Name</th>
-                        <th>Generic Name</th>
+                        <!-- <th>Generic Name</th> -->
                         <th>Composition</th>
                         <th>Strength</th>
-                        <th>Medicine Type</th>
-                        <th>Medicine Unit</th>
-                        <th>Manufacturer</th>
+                        <!-- <th>Medicine Type</th>
+                        <th>Medicine Unit</th> -->
+                        <!-- <th>Manufacturer</th> -->
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -56,113 +54,384 @@
                     <tr>
                         <td>{{ loop.index }}</td>
                         <td>{{item.medicine_name}}</td>
-                        <td>{{item.generic_name}}</td>
+                        <!-- <td>{{item.generic_name}}</td> -->
                         <td>{{item.composition}}</td>
-                        <td>{{item.strength}}</td>
-                        <td>{{item.type_name}}</td>
-                        <td>{{item.unit_short_name}}</td>
-                        <td>{{item.manufacturer_name}}</td>
+                        <td>{{item.strength}} {{item.unit_short_name if item.unit_short_name else ''}}</td>
+                        <!-- <td>{{item.type_name}}</td>
+                        <td>{{item.unit_short_name}}</td> -->
+                        <!-- <td>{{item.manufacturer_name}}</td> -->
                         <td>
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#viewmeddetails{{item.id}}"
+                                onclick="loadMedicineDetails({{item.id}})">
+                                <i class="bi bi-eye mx-3" title="View Details"></i>
+                            </a>
+                            {% if item.pharmacy_id != 0 %}
                             <a href="#" data-bs-toggle="modal" data-bs-target="#editmednames{{item.id}}">
                                 <i class="bi bi-pencil-square mx-3"></i>
                             </a>
-
                             <div class="modal fade" id="editmednames{{item.id}}" tabindex="-1"
                                 aria-labelledby="editmednames{{item.id}}" aria-hidden="true">
-                                <div
-                                    class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
-                                    <div class="modal-content border-0 shadow w-50">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow">
                                         <div class="modal-header form-header">
-                                            <h5 class="modal-title" id="editmednames{{item.id}}">Edit Medicine Details
+                                            <h5 class="modal-title" id="editmednames{{item.id}}">Edit Medicine, Stock &
+                                                Ratelist
                                             </h5>
                                             <button type="button" class="btn-close btn-close-white"
                                                 data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <form action="{{ url_for('pharm_name.edit_mednames', id=item.id) }}"
+                                            <form
+                                                action="{{ url_for('pharm_name.edit_medicine_combined', id=item.id) }}"
                                                 method="POST">
 
-                                                <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
+                                                <input type="hidden" name="pharmacy_id"
+                                                    value="{{ session['pharmacy']['id'] }}">
 
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="type" class="form-label">Medicine Name<span
-                                                                style="color: red;">*</span></label>
-                                                        <input type="text" class="form-control" id="type"
-                                                            name="medicine_name" value="{{item.medicine_name}}"
-                                                            required>
+                                                <!-- Medicine Details Section -->
+                                                <div class="card shadow-sm mb-4">
+                                                    <div class="card-header bg-secondary text-white">
+                                                        <h6 class="card-title mb-0">
+                                                            <i class="bi bi-capsule me-2"></i>Medicine Details
+                                                        </h6>
                                                     </div>
-
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="description" class="form-label">Generic Name</label>
-                                                        <input class="form-control" id="input" name="genericname"
-                                                            value="{{item.generic_name}}">
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="type" class="form-label">Medicine
+                                                                        Name<span style="color: red;">*</span></label>
+                                                                    <input type="text" class="form-control" id="type"
+                                                                        name="medicine_name"
+                                                                        value="{{item.medicine_name}}" required>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="description" class="form-label">Generic
+                                                                        Name</label>
+                                                                    <input class="form-control" id="input"
+                                                                        name="genericname"
+                                                                        value="{{item.generic_name}}">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="description"
+                                                                        class="form-label">Composition</label>
+                                                                    <input class="form-control" type="text" id="input"
+                                                                        name="composition" value="{{item.composition}}">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="description"
+                                                                        class="form-label">Strength</label>
+                                                                    <input class="form-control" type="number" id="input"
+                                                                        name="strenght" value="{{item.strength}}">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="description" class="form-label">Medicine
+                                                                        Type<span style="color: red;">*</span></label>
+                                                                    <select class="form-select" name="type_id"
+                                                                        id="type_id">
+                                                                        <option value="{{item.type_id}}">
+                                                                            {{item.type_name}}</option>
+                                                                        {% for type in med_types %}
+                                                                        {% if type.id != item.type_id %}
+                                                                        <option value="{{type.id}}">{{ type.type_name }}
+                                                                        </option>
+                                                                        {% endif %}
+                                                                        {% endfor %}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="description" class="form-label">Medicine
+                                                                        Unit<span style="color: red;">*</span></label>
+                                                                    <select class="form-select" name="unit_id"
+                                                                        id="unit_id">
+                                                                        <option value="{{ item.unit_id }}">{{
+                                                                            item.unit_short_name
+                                                                            }}</option>
+                                                                        {% for unit in med_units %}
+                                                                        {% if unit.id != item.unit_id %}
+                                                                        <option value="{{unit.id}}">{{
+                                                                            unit.unit_short_name }}
+                                                                        </option>
+                                                                        {% endif %}
+                                                                        {% endfor %}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="description"
+                                                                        class="form-label">Manufacturer<span
+                                                                            style="color: red;">*</span></label>
+                                                                    <select class="form-select" name="manufacturer_id"
+                                                                        id="manufacturer_id">
+                                                                        <option value="{{ item.manufacturer_id }}">{{
+                                                                            item.manufacturer_name }}</option>
+                                                                        {% for manufacturer in manu %}
+                                                                        {% if manufacturer.id != item.manufacturer_id %}
+                                                                        <option value="{{manufacturer.id}}">{{
+                                                                            manufacturer.manufacturer_name }}</option>
+                                                                        {% endif %}
+                                                                        {% endfor %}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div class="mb-3">
-                                                    <label for="description" class="form-label">Composition</label>
-                                                    <input class="form-control" type="text" id="input"
-                                                        name="composition" value="{{item.composition}}">
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="description" class="form-label">Medicine Type<span
-                                                                style="color: red;">*</span></label>
-                                                        <select class="form-select" name="type_id" id="type_id">
-                                                            <option value="{{item.type_id}}">{{item.type_name}}</option>
-                                                            {% for type in med_types %}
-                                                            {% if type.id != item.type_id %}
-                                                            <option value="{{type.id}}">{{ type.type_name }}</option>
-                                                            {% endif %}
-                                                            {% endfor %}
-                                                        </select>
+                                                <!-- Stock Details Section -->
+                                                <div class="card shadow-sm mb-4">
+                                                    <div class="card-header bg-secondary text-white">
+                                                        <h6 class="card-title mb-0">
+                                                            <i class="bi bi-box-seam me-2"></i>Stock Details
+                                                        </h6>
                                                     </div>
-                                                    <div class="mb-3 col-md-6">
-                                                        <label for="description" class="form-label">Medicine Unit<span
-                                                                style="color: red;">*</span></label>
-                                                        <select class="form-select" name="unit_id" id="unit_id">
-                                                            <option value="{{ item.unit_id }}">{{ item.unit_short_name
-                                                                }}</option>
-                                                            {% for unit in med_units %}
-                                                            {% if unit.id != item.unit_id %}
-                                                            <option value="{{unit.id}}">{{ unit.unit_short_name }}
-                                                            </option>
-                                                            {% endif %}
-                                                            {% endfor %}
-                                                        </select>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="stock_quantity"
+                                                                        class="form-label">Quantity</label>
+                                                                    <input type="number" class="form-control"
+                                                                        name="stock_quantity"
+                                                                        value="{{item.quantity or ''}}"
+                                                                        placeholder="Enter Quantity">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="batch_number" class="form-label">Batch
+                                                                        Number</label>
+                                                                    <input class="form-control" name="batch_number"
+                                                                        value="{{item.batch_number or ''}}"
+                                                                        placeholder="Enter Batch Number">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="expiry_date" class="form-label">Expiry
+                                                                        Date</label>
+                                                                    <input class="form-control" type="date"
+                                                                        name="expiry_date"
+                                                                        value="{{item.expiry_date or ''}}">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="purchase_price"
+                                                                        class="form-label">Purchase Price (₹)</label>
+                                                                    <input class="form-control" type="number"
+                                                                        step="0.01" name="purchase_price"
+                                                                        value="{{item.purchase_price or ''}}"
+                                                                        placeholder="Enter Purchase Price">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="selling_price"
+                                                                        class="form-label">Selling Price (₹)</label>
+                                                                    <input class="form-control" type="number"
+                                                                        step="0.01" name="selling_price"
+                                                                        value="{{item.selling_price or ''}}"
+                                                                        placeholder="Enter Selling Price">
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div class="mb-3">
-                                                    <label for="description" class="form-label">Strength</label>
-                                                    <input class="form-control" type="number" id="input" name="strenght"
-                                                        value="{{item.strength}}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="description" class="form-label">Manufacturer<span
-                                                            style="color: red;">*</span></label>
-                                                    <select class="form-select" name="manufacturer_id"
-                                                        id="manufacturer_id">
-                                                        <option value="{{ item.manufacturer_id }}">{{
-                                                            item.manufacturer_name }}</option>
-                                                        {% for manufacturer in manu %}
-                                                        {% if manufacturer.id != item.manufacturer_id %}
-                                                        <option value="{{manufacturer.id}}">{{
-                                                            manufacturer.manufacturer_name }}</option>
-                                                        {% endif %}
-                                                        {% endfor %}
-                                                    </select>
+                                                <!-- Ratelist Details Section -->
+                                                <div class="card shadow-sm mb-4">
+                                                    <div class="card-header bg-secondary text-white">
+                                                        <h6 class="card-title mb-0">
+                                                            <i class="bi bi-receipt me-2"></i>Ratelist Details
+                                                        </h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="ratelist_amount"
+                                                                        class="form-label">Amount (₹)</label>
+                                                                    <input class="form-control" type="number"
+                                                                        step="0.01" name="ratelist_amount"
+                                                                        value="{{item.amount or ''}}"
+                                                                        placeholder="Enter Amount">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="quantity_per_pack"
+                                                                        class="form-label">Quantity/Pack</label>
+                                                                    <input class="form-control" type="number"
+                                                                        name="quantity_per_pack"
+                                                                        value="{{item.quantity_per_pack or ''}}"
+                                                                        placeholder="Enter Quantity per Pack" min="1">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="discount" class="form-label">Discount
+                                                                        (%)</label>
+                                                                    <input class="form-control" type="number"
+                                                                        step="0.01" name="discount"
+                                                                        value="{{item.discount or ''}}"
+                                                                        placeholder="Enter Discount">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="CGST" class="form-label">CGST
+                                                                        (%)</label>
+                                                                    <input class="form-control" type="number"
+                                                                        step="0.01" name="CGST"
+                                                                        value="{{item.CGST or ''}}"
+                                                                        placeholder="Enter CGST">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="mb-3">
+                                                                    <label for="SGST" class="form-label">SGST
+                                                                        (%)</label>
+                                                                    <input class="form-control" type="number"
+                                                                        step="0.01" name="SGST"
+                                                                        value="{{item.SGST or ''}}"
+                                                                        placeholder="Enter SGST">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
-                                                <div class="text-end">
-                                                    <button type="submit"
-                                                        class="btn bg-gradient-primary">Submit</button>
-                                                    <button type="button" class="btn btn-secondary me-2"
+                                                <div class="text-end mt-3">
+                                                    <button type="submit" class="btn bg-gradient-primary px-4">
+                                                        <i class="bi bi-check-circle me-2"></i>Update All
+                                                    </button>
+                                                    <button type="button" class="btn bg-gradient-secondary me-2"
                                                         data-bs-dismiss="modal">Cancel</button>
                                                 </div>
                                             </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <i class="bi bi-pencil-square mx-3 text-muted" style="opacity: 0.5;"
+                                title="Cannot edit master medicines"></i>
+                            {% endif %}
+
+                            <!-- View Medicine Details Modal -->
+                            <div class="modal fade" id="viewmeddetails{{item.id}}" tabindex="-1"
+                                aria-labelledby="viewmeddetails{{item.id}}" aria-hidden="true">
+                                <div class="modal-dialog modal-xl modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow">
+                                        <div class="modal-header form-header">
+                                            <h5 class="modal-title" id="viewmeddetails{{item.id}}">View Medicine Details
+                                                - {{item.medicine_name}}</h5>
+                                            <button type="button" class="btn-close btn-close-white"
+                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <!-- Stock Details Section -->
+                                            <div class="card shadow-sm mb-4">
+                                                <div class="card-header bg-secondary text-white">
+                                                    <h6
+                                                        class="card-title mb-0 d-flex justify-content-between align-items-center">
+                                                        <span><i class="bi bi-box-seam me-2"></i>Stock Details</span>
+                                                        <input type="text" class="form-control w-25"
+                                                            id="stockSearch{{item.id}}" placeholder="Search stock..."
+                                                            style="background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.5); color: #333;">
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-striped" id="stockTable{{item.id}}">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>S.No</th>
+                                                                    <th>Medicine Name</th>
+                                                                    <th>Quantity</th>
+                                                                    <th>Batch Number</th>
+                                                                    <th>Expiry Date</th>
+                                                                    <th>Purchase Price</th>
+                                                                    <th>Selling Price</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody id="stockTableBody{{item.id}}">
+                                                                <!-- Stock data will be loaded here via AJAX -->
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div id="stockNoData{{item.id}}" class="text-center text-muted py-4"
+                                                        style="display: none;">
+                                                        <i class="bi bi-inbox fs-1"></i>
+                                                        <p class="mt-2">No stock data available for this medicine</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Ratelist Details Section -->
+                                            <div class="card shadow-sm mb-4">
+                                                <div class="card-header bg-secondary text-white">
+                                                    <h6
+                                                        class="card-title mb-0 d-flex justify-content-between align-items-center">
+                                                        <span><i class="bi bi-receipt me-2"></i>Ratelist Details</span>
+                                                        <input type="text" class="form-control w-25"
+                                                            id="ratelistSearch{{item.id}}"
+                                                            placeholder="Search ratelist..."
+                                                            style="background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.5); color: #333;">
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-striped"
+                                                            id="ratelistTable{{item.id}}">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>S.No</th>
+                                                                    <th>Ratelist Name</th>
+                                                                    <th>Amount (₹)</th>
+                                                                    <th>Quantity/Pack</th>
+                                                                    <th>Discount (%)</th>
+                                                                    <th>CGST (%)</th>
+                                                                    <th>SGST (%)</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody id="ratelistTableBody{{item.id}}">
+                                                                <!-- Ratelist data will be loaded here via AJAX -->
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div id="ratelistNoData{{item.id}}"
+                                                        class="text-center text-muted py-4" style="display: none;">
+                                                        <i class="bi bi-receipt fs-1"></i>
+                                                        <p class="mt-2">No ratelist data available for this medicine</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="text-end mt-3">
+                                                <button type="button" class="btn bg-gradient-secondary"
+                                                    data-bs-dismiss="modal">Close</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -172,6 +441,7 @@
                                 onclick="return confirm('Are you sure you want to delete {{ item.medicine_name }}?');">
                                 <i class="bi bi-trash-fill mx-3"></i>
                             </a>
+
                         </td>
                     </tr>
                     {% endfor %}
@@ -182,11 +452,15 @@
     </div>
 </div>
 
+
+
+
+<!-- add new medicine modal -->
 <div class="modal fade" id="addmednames" tabindex="-1" aria-labelledby="addmednames" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered d-flex justify-content-center align-items-center">
-        <div class="modal-content border-0 shadow w-50">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
             <div class="modal-header form-header">
-                <h5 class="modal-title" id="addmednames">Add Medicine Details</h5>
+                <h5 class="modal-title" id="addmednames">Add Medicine, Stock & Ratelist</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
@@ -194,64 +468,196 @@
                 <form action="{{ url_for('pharm_name.add_medicine') }}" method="POST">
 
                     <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
-                    <div class="row">
-                        <div class="mb-3 col-md-6">
-                            <label for="type" class="form-label">Medicine Name<span style="color: red;">*</span></label>
-                            <input type="text" class="form-control" id="type" name="medsname"
-                                placeholder="Enter Medicine name" required>
+
+                    <!-- Medicine Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-capsule me-2"></i>Medicine Details
+                            </h6>
                         </div>
-
-                        <div class="mb-3 col-md-6">
-                            <label for="description" class="form-label">Generic Name</label>
-                            <input class="form-control" id="input" name="genericname" placeholder="Enter Generic Name">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="type" class="form-label">Medicine Name<span
+                                                style="color: red;">*</span></label>
+                                        <input type="text" class="form-control" id="type" name="medsname"
+                                            placeholder="Enter Medicine name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Generic Name</label>
+                                        <input class="form-control" id="input" name="genericname"
+                                            placeholder="Enter Generic Name">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Composition</label>
+                                        <input class="form-control" type="text" id="input" name="composition"
+                                            placeholder="Enter Composition">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Strength</label>
+                                        <input class="form-control" type="number" id="input" name="strenght"
+                                            placeholder="Enter Strength">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Medicine Type<span
+                                                style="color: red;">*</span></label>
+                                        <select class="form-select" name="type_id" id="type_id" required>
+                                            <option value="">Select Type</option>
+                                            {% for type in med_types %}
+                                            <option value="{{type.id}}">{{ type.type_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Medicine Unit<span
+                                                style="color: red;">*</span></label>
+                                        <select class="form-select" name="unit_id" id="unit_id" required>
+                                            <option value="">Select Unit</option>
+                                            {% for unit in med_units %}
+                                            <option value="{{unit.id}}">{{ unit.unit_short_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Manufacturer<span
+                                                style="color: red;">*</span></label>
+                                        <select class="form-select" name="manufacturer_id" id="manufacturer_id"
+                                            required>
+                                            <option value="">Select Manufacturer</option>
+                                            {% for manufacturer in manu %}
+                                            <option value="{{manufacturer.id}}">{{ manufacturer.manufacturer_name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Composition</label>
-                        <input class="form-control" id="input" name="composition" placeholder="Enter Composition">
-                    </div>
-
-                    <div class="row">
-                        <div class="mb-3 col-md-6">
-                            <label for="description" class="form-label">Medicine Type<span
-                                    style="color: red;">*</span></label>
-                            <select class="form-select" name="type_id" id="type_id" required>
-                                <option value="">Select Type</option>
-                                {% for type in med_types %}
-                                <option value="{{type.id}}">{{ type.type_name }}</option>
-                                {% endfor %}
-                            </select>
+                    <!-- Stock Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-box-seam me-2"></i>Stock Details <small
+                                    class="text-muted">(Optional)</small>
+                            </h6>
                         </div>
-                        <div class="mb-3 col-md-6">
-                            <label for="description" class="form-label">Medicine Unit<span
-                                    style="color: red;">*</span></label>
-                            <select class="form-select" name="unit_id" id="unit_id" required>
-                                <option value="">Select Unit</option>
-                                {% for unit in med_units %}
-                                <option value="{{unit.id}}">{{ unit.unit_short_name }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="stock_quantity" class="form-label">Quantity</label>
+                                        <input type="number" class="form-control" name="stock_quantity"
+                                            placeholder="Enter Quantity">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="batch_number" class="form-label">Batch Number</label>
+                                        <input class="form-control" name="batch_number"
+                                            placeholder="Enter Batch Number">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="expiry_date" class="form-label">Expiry Date</label>
+                                        <input class="form-control" type="date" name="expiry_date">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="purchase_price" class="form-label">Purchase Price (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="purchase_price"
+                                            placeholder="Enter Purchase Price">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="selling_price" class="form-label">Selling Price (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="selling_price"
+                                            placeholder="Enter Selling Price">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Strength</label>
-                        <input class="form-control" id="input" type="number" name="strenght" placeholder="Enter Strength">
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Manufacturer<span
-                                style="color: red;">*</span></label>
-                        <select class="form-select" name="manufacturer_id" id="manufacturer_id" required>
-                            <option value="">Select Manufacturer</option>
-                            {% for manufacturer in manu %}
-                            <option value="{{manufacturer.id}}">{{ manufacturer.manufacturer_name }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Ratelist Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-receipt me-2"></i>Ratelist Details <small
+                                    class="text-muted">(Optional)</small>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="ratelist_amount" class="form-label">Amount (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="ratelist_amount"
+                                            placeholder="Enter Amount">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="quantity_per_pack" class="form-label">Quantity/Pack</label>
+                                        <input class="form-control" type="number" name="quantity_per_pack"
+                                            placeholder="Enter Quantity per Pack" min="1" value="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="discount" class="form-label">Discount (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="discount"
+                                            placeholder="Enter Discount">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="CGST" class="form-label">CGST (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="CGST"
+                                            placeholder="Enter CGST">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="SGST" class="form-label">SGST (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="SGST"
+                                            placeholder="Enter SGST">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="text-end">
-                        <button type="submit" class="btn bg-gradient-primary">Submit</button>
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn bg-gradient-primary px-4">
+                            <i class="bi bi-check-circle me-2"></i>Add All
+                        </button>
                         <button type="button" class="btn bg-gradient-secondary me-2"
                             data-bs-dismiss="modal">Cancel</button>
                     </div>
@@ -260,5 +666,160 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Initialize DataTable for main medicine table
+    $(document).ready(function () {
+        $('#med').DataTable({
+            "pageLength": 25,
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "order": [[1, 'asc']], // Sort by Medicine Name by default
+            "columnDefs": [
+                { "orderable": false, "targets": [8] } // Disable sorting on Actions column
+            ]
+        });
+    });
+
+    // Function to load medicine details (stock and ratelist)
+    function loadMedicineDetails(medicineId) {
+        // Show loading state
+        const stockTableBody = document.getElementById('stockTableBody' + medicineId);
+        const ratelistTableBody = document.getElementById('ratelistTableBody' + medicineId);
+        const stockNoData = document.getElementById('stockNoData' + medicineId);
+        const ratelistNoData = document.getElementById('ratelistNoData' + medicineId);
+
+        // Reset states
+        stockNoData.style.display = 'none';
+        ratelistNoData.style.display = 'none';
+
+        // Show loading in tables
+        stockTableBody.innerHTML = '<tr><td colspan="7" class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</td></tr>';
+        ratelistTableBody.innerHTML = '<tr><td colspan="7" class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</td></tr>';
+
+        // Make AJAX request
+        fetch(`/view-medicine-details/${medicineId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    populateStockTable(medicineId, data.stock_data);
+                    populateRatelistTable(medicineId, data.ratelist_data);
+                    initializeSearch(medicineId);
+                } else {
+                    stockTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
+                    ratelistTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                stockTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
+                ratelistTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
+            });
+    }
+
+    // Function to populate stock table
+    function populateStockTable(medicineId, stockData) {
+        const tableBody = document.getElementById('stockTableBody' + medicineId);
+        const noDataDiv = document.getElementById('stockNoData' + medicineId);
+
+        if (stockData && stockData.length > 0) {
+            let html = '';
+            stockData.forEach((item, index) => {
+                html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.medicine_name || '-'}</td>
+                    <td>${item.quantity || 0}</td>
+                    <td>${item.batch_number || '-'}</td>
+                    <td>${item.expiry_date || '-'}</td>
+                    <td>₹${item.purchase_price || '0.00'}</td>
+                    <td>₹${item.selling_price || '0.00'}</td>
+                </tr>
+            `;
+            });
+            tableBody.innerHTML = html;
+        } else {
+            tableBody.innerHTML = '';
+            noDataDiv.style.display = 'block';
+        }
+    }
+
+    // Function to populate ratelist table
+    function populateRatelistTable(medicineId, ratelistData) {
+        const tableBody = document.getElementById('ratelistTableBody' + medicineId);
+        const noDataDiv = document.getElementById('ratelistNoData' + medicineId);
+
+        if (ratelistData && ratelistData.length > 0) {
+            let html = '';
+            ratelistData.forEach((item, index) => {
+                html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.medicine_name || '-'}</td>
+                    <td>₹${item.amount || '0.00'}</td>
+                    <td>${item.quantity_per_pack || 1}</td>
+                    <td>${item.discount || 0}%</td>
+                    <td>${item.CGST || 0}%</td>
+                    <td>${item.SGST || 0}%</td>
+                </tr>
+            `;
+            });
+            tableBody.innerHTML = html;
+        } else {
+            tableBody.innerHTML = '';
+            noDataDiv.style.display = 'block';
+        }
+    }
+
+    // Function to initialize search functionality
+    function initializeSearch(medicineId) {
+        // Stock search
+        const stockSearch = document.getElementById('stockSearch' + medicineId);
+        const stockTable = document.getElementById('stockTable' + medicineId);
+
+        stockSearch.addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+            const rows = stockTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+
+        // Ratelist search
+        const ratelistSearch = document.getElementById('ratelistSearch' + medicineId);
+        const ratelistTable = document.getElementById('ratelistTable' + medicineId);
+
+        ratelistSearch.addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+            const rows = ratelistTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    // Clear search when modal is closed
+    $(document).on('hidden.bs.modal', '[id^="viewmeddetails"]', function () {
+        const medicineId = this.id.replace('viewmeddetails', '');
+        const stockSearch = document.getElementById('stockSearch' + medicineId);
+        const ratelistSearch = document.getElementById('ratelistSearch' + medicineId);
+
+        if (stockSearch) stockSearch.value = '';
+        if (ratelistSearch) ratelistSearch.value = '';
+    });
+</script>
 
 {% endblock %}

@@ -164,14 +164,16 @@
     <div class="profile mt-3 ms-2 dropdown">
       {% if session['user'] %}
       <a class="d-flex align-items-center text-secondary dropdown-toggle" href="#" id="userDropdown"
-        data-bs-toggle="dropdown" aria-expanded="false">
-        <img
+        data-bs-toggle="dropdown" aria-expanded="false">        <img
           src="https://imgs.search.brave.com/y3hKHaQFUJLeAEC_2JWu_h3nU6o851RqxQsWfAuxNek/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzL2FhL2M4/L2M5L2FhYzhjOWU4/NmUxNWViN2M2Yjg3/MjE4ZmQ2MzdiMWQ2/LmpwZw"
           alt="avatar" width="40" height="40" class="rounded-circle me-2">
-        <strong>{{ session['pharmacy']['pharmacy_name'] }}</strong>
-      </a>
-      <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="userDropdown">
+        <div>
+          <strong>{{ session['pharmacy']['pharmacy_name'] }}</strong>
+        </div>
+      </a>      <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="userDropdown">
+        {% if session.get('is_admin') %}
         <li><a class="dropdown-item" href="{{ url_for('users_bp.users') }}">User List</a></li>
+        {% endif %}
       </ul>
 
       {% endif %}
@@ -206,10 +208,9 @@
             </div>
             <span class="nav-link-text ms-1">Dashboard</span>
           </a>
-        </li>
-
-
+        </li>        
         <!-- Replace only the dropdown menu section -->
+        {% if session.get('is_admin') %}
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             <div
@@ -235,13 +236,15 @@
           <ul class="dropdown-menu mx-5">
             <li><a class="dropdown-item" href="{{ url_for('meds.meds') }}">Medicine Types</a></li>
             <li><a class="dropdown-item" href="{{url_for('data_fetch.fetch')}}">Medicine Units</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('med_name.mednames') }}">Master Medicines</a></li>
           </ul>
         </li>
+        {% endif %}
 
 
         
         <li class="nav-item">
-          <a class="nav-link  " href="{{url_for('billing.generate_bill')}}">
+          <a class="nav-link  " href="{{url_for('billing.generate_bill_post')}}">
             <div
               class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
               <svg width="12px" height="12px" viewBox="0 0 42 42" version="1.1" xmlns="http://www.w3.org/2000/svg"
@@ -298,7 +301,7 @@
             <span class="nav-link-text ms-1"> Pharmacy Medicine </span>
           </a>
         </li>
-        <li class="nav-item">
+        <!-- <li class="nav-item">
           <a class="nav-link  " href="{{ url_for('med_name.mednames') }}">
             <div
               class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -323,7 +326,7 @@
             </div>
             <span class="nav-link-text ms-1">Medicines Names</span>
           </a>
-        </li>
+        </li> -->
         <li class="nav-item">
           <a class="nav-link  " href="/brands">
             <div
@@ -349,7 +352,7 @@
             </div>
             <span class="nav-link-text ms-1">Medicine Manufacturer</span>
           </a>
-        </li>
+        </li>        {% if session.get('is_admin') %}
         <li class="nav-item">
           <a class="nav-link  " href="/users">
             <div
@@ -379,6 +382,7 @@
             <span class="nav-link-text ms-1">Pharmacy User</span>
           </a>
         </li>
+        {% endif %}
         <li class="nav-item">
           <a class="nav-link  " href="{{url_for('medstock.stock')}}">
             <div
@@ -520,8 +524,9 @@
           </a>
           <ul class="dropdown-menu mx-5">
             <li><a class="dropdown-item" href="{{ url_for('lowstock.stocks') }}">Stock Report</a></li>
-            <li><a class="dropdown-item" href="{{url_for('report_bp.business_report')}}">Business Report</a></li>
-            <li><a class="dropdown-item" href="{{url_for('expiry_report.index')}}">Expiry Report</a></li>
+<li>
+  <a class="dropdown-item" href="#" onclick="openBusinessReport(); return false;" target="_blank">Business Report</a>
+</li>        <li><a class="dropdown-item" href="{{url_for('expiry_report.index')}}">Expiry Report</a></li>
           </ul>
         </li>
 
@@ -932,10 +937,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </script>
 
+
     <!--  -->
 
     {% endblock %}
 
+
+<script>
+async function openBusinessReport() {
+  const apiUrl = 'https://billing-system-cdfva6d4d6cxb8dm.canadacentral-01.azurewebsites.net/api/business-report';
+  const apiKey = 'c21a767f5c242f925aefa1ed670c8fc5599d788c744a31a8'; // Replace with your actual API key
+
+  const newWindow = window.open('', '_blank'); // Open blank window immediately
+
+  try {
+    const response = await fetch(apiUrl, {
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const contentType = response.headers.get("Content-Type");
+    const data = await response.text();  // assume response is text/html or similar
+
+    newWindow.document.open();
+    newWindow.document.write(data);
+    
+
+  } catch (error) {
+    newWindow.document.write('Error loading report: ' + error.message);
+  }
+}
+</script>
 
 
 

@@ -6,28 +6,28 @@
 <div class="container-sm mt-8 px-8">
   <div class="row">
     <div class="col-lg-12 offset-lg-1">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><svg
-                xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" class="bi bi-x-lg"
-                viewBox="0 0 16 16">
-                <path
-                d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
-            </svg></button>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><svg
+            xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" class="bi bi-x-lg"
+            viewBox="0 0 16 16">
+            <path
+              d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+          </svg></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="text-secondary">Select Medicines from Master List</h3>
         <a href="{{ url_for('pharm_name.med_details') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-return-left"></i>
+          <i class="bi bi-arrow-return-left"></i>
         </a>
       </div>
-      
+
 
       <form action="{{ url_for('pharm_name.add_from_master') }}" method="POST">
         <div class="table-responsive">
@@ -37,6 +37,8 @@
                 <th width="50px">
                 </th>
                 <th>Medicine Name</th>
+                <th>Composition</th>
+                <th>Strength</th>
                 <th>Already Selected</th>
               </tr>
             </thead>
@@ -45,17 +47,19 @@
               <tr>
                 <td>
                   {% if med.medicine_name in selected_medicines %}
-                    <input type="checkbox" disabled checked class="form bg-success">
+                  <input type="checkbox" disabled checked class="form bg-success">
                   {% else %}
-                    <input type="checkbox" name="selected_medicines" value="{{ med.id }}" class="medicine-checkbox ">
+                  <input type="checkbox" name="selected_medicines" value="{{ med.id }}" class="medicine-checkbox ">
                   {% endif %}
                 </td>
                 <td>{{ med.medicine_name }}</td>
+                <td>{{ med.composition or '-' }}</td>
+                <td>{{ med.strength or '-' }} {{ med.unit_short_name or '' }}</td>
                 <td>
                   {% if med.medicine_name in selected_medicines %}
-                    <span class="badge bg-success">Yes</span>
+                  <span class="badge bg-success">Yes</span>
                   {% else %}
-                    <span class="badge bg-light text-dark">No</span>
+                  <span class="badge bg-light text-dark">No</span>
                   {% endif %}
                 </td>
               </tr>
@@ -72,13 +76,12 @@
   </div>
 </div>
 
-<script>
-  $(document).ready(function() {
+<script>  $(document).ready(function () {
     $('#master_med').DataTable({
       "pageLength": 25,
       "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
       "columnDefs": [
-        { "orderable": false, "targets": 0 } // Disable sorting on checkbox column
+        { "orderable": false, "targets": [0, 4] } // Disable sorting on checkbox and Already Selected columns
       ]
     });
   });

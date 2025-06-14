@@ -82,21 +82,33 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
+        user_type = request.form.get('user_type')
 
         cur = mysql.connection.cursor()
         cur.execute("SELECT * FROM pharmacy_users WHERE email = %s", (email,))
         user = cur.fetchone()
 
         if user and verify_pass(password, user['password']):  
+            db_user_type = user.get('user_type', '').lower()
+            
+            if user_type == 'admin' and db_user_type != 'admin':
+                flash('You are not authorized to login as admin', 'error')
+                return render_template('sign-in.html')
+            elif user_type == 'non-admin' and db_user_type == 'admin':
+                flash('Admin users must select Admin user type', 'error')
+                return render_template('sign-in.html')
+            
             session['loggedin'] = True
             session['user'] = user
             session['user_id'] = user['id']
+            session['selected_user_type'] = user_type  
+            session['is_admin'] = (user_type == 'admin')  
 
             cur.execute("SELECT * FROM pharmacy_service WHERE id = %s", (user['pharmacy_service_id'],))
             pharmacy = cur.fetchone()
             session['pharmacy'] = pharmacy
 
-            flash(f"'{ session['pharmacy']['pharmacy_name'] }' successfully logged in", 'success')
+            flash(f"'{ session['pharmacy']['pharmacy_name'] }' successfully logged in as {user_type}", 'success')
             return redirect(url_for('auth_bp.dashboard'))
         else:
             flash('Incorrect email or password, please enter correct details','warning')

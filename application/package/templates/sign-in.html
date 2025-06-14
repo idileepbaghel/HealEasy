@@ -116,8 +116,7 @@
                       </div>
                       
 
-                      <div class="card-body">
-                        <form role="form" method="POST" action="{{ url_for('auth_bp.login') }}">
+                      <div class="card-body">                        <form role="form" method="POST" action="{{ url_for('auth_bp.login') }}">
                           <label>Email<span style="color: red;">*</span></label>
                           <div class="mb-3">
                             <input type="email" class="form-control" placeholder="Email" aria-label="Email" name="email"
@@ -127,6 +126,14 @@
                           <div class="mb-3">
                             <input type="password" class="form-control" placeholder="Password" aria-label="Password" name="password"
                               aria-describedby="password-addon" required>
+                          </div>
+                          <label>User Type<span style="color: red;">*</span></label>
+                          <div class="mb-3">
+                            <select class="form-control" name="user_type" aria-label="User Type" required>
+                              <option value="">Select User Type</option>
+                              <option value="admin">Admin</option>
+                              <option value="non-admin">Non-Admin</option>
+                            </select>
                           </div>
                           <div class="text-center">
                             <button type="submit" class="btn bg-gradient-info w-100 mt-4 mb-0">Sign in</button>

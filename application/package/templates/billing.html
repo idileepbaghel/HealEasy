@@ -249,15 +249,6 @@
                 addNewRow();
             });
         }
-
-        if (form) {
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                console.log('Form submitted');
-                generateBill();
-            });
-        }
-
         // Initialize everything else
         initializeSearchableDropdowns();
         setupEventListeners();
@@ -652,34 +643,6 @@
     });
 
 
-</script>
-<script>
-    document.getElementById('billForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-
-        console.log('Submitting form data...');
-
-        fetch('/generate-bill', {
-    method: 'POST',
-    body: formData,
-    headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-    }
-})
-.then(response => response.json())
-.then(data => {
-    console.log(data)
-    if (data.success && data.action === 'open_new_window') {
-        window.open(data.redirect_url, '_blank');
-    }
-})
-.catch(error => {
-    console.error('Error:', error);
-});
-    });
-
-    
 </script>
 
 {% endblock %}
