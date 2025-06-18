@@ -269,9 +269,9 @@
                                                                 <div class="mb-3">
                                                                     <label for="expiry_date" class="form-label">Expiry
                                                                         Date</label>
-                                                                    <input class="form-control" type="date"
+                                                                    <input class="form-control" type="date" id="date"
                                                                         name="expiry_date"
-                                                                        value="{{item.expiry_date or ''}}">
+                                                                        value="{{item.expiry_date or ''}}" min="<?php echo date('Y-m-d'); ?>" onchange="validateDate(this)">
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -568,4 +568,159 @@
                                         </select>
                                     </div>
                                 </div>
-                                {% endblock %}
+
+                                
+                                <div class="col-md-4"> 
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Manufacturer<span
+                                                style="color: red;">*</span></label>
+                                        <select class="form-select" name="manufacturer_id" id="manufacturer_id" required>
+                                            <option value="">Select Manufacturer</option>
+                                            {% for manufacturer in manu %}
+                                            <option value="{{manufacturer.id}}">{{ manufacturer.manufacturer_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-box-seam me-2"></i>Stock Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="stock_quantity" class="form-label">Quantity</label>
+                                        <input type="number" class="form-control" name="stock_quantity"
+                                               placeholder="Enter Quantity">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="batch_number" class="form-label">Batch Number</label>
+                                        <input class="form-control" name="batch_number"
+                                               placeholder="Enter Batch Number">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="expiry_date" class="form-label">Expiry Date</label>
+                                        <input class="form-control" type="date" id="add_expiry_date"
+                                               name="expiry_date" min="<?php echo date('Y-m-d'); ?>" onchange="validateDate(this)">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="purchase_price" class="form-label">Purchase Price (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="purchase_price"
+                                               placeholder="Enter Purchase Price">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="selling_price" class="form-label">Selling Price (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="selling_price"
+                                               placeholder="Enter Selling Price">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ratelist Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-receipt me-2"></i>Ratelist Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="ratelist_amount" class="form-label">Amount (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="ratelist_amount"
+                                               placeholder="Enter Amount">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="quantity_per_pack" class="form-label">Quantity/Pack</label>
+                                        <input class="form-control" type="number" name="quantity_per_pack"
+                                               placeholder="Enter Quantity per Pack" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="discount" class="form-label">Discount (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="discount"
+                                               placeholder="Enter Discount">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="CGST" class="form-label">CGST (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="CGST"
+                                               placeholder="Enter CGST">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="SGST" class="form-label">SGST (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="SGST"
+                                               placeholder="Enter SGST">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn bg-gradient-primary px-4">
+                            <i class="bi bi-check-circle me-2"></i>Add Medicine
+                        </button>
+                        <button type="button" class="btn bg-gradient-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  // Set min date to today for all date inputs
+  const today = new Date().toISOString().split('T')[0];
+  
+  // For edit form date inputs
+  const dateInputs = document.querySelectorAll('input[type="date"]');
+  dateInputs.forEach(input => {
+    input.setAttribute('min', today);
+  });
+  
+  function validateDate(input) {
+    const selectedDate = new Date(input.value);
+    const today = new Date();
+
+    // Reset time portion for accurate date comparison
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      alert("Please select a future date for expiry");
+      input.value = ''; // Clear invalid input
+    }
+  }
+</script>
+
+
+{% endblock %}

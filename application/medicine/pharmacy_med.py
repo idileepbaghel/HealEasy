@@ -81,9 +81,12 @@ def add_medicine():
         added_by = session.get('user_id', 1) 
         current_time = datetime.now()
         
-        cur = mysql.connection.cursor()
-        
+        cur = mysql.connection.cursor()        
         try:
+            print(f"Adding medicine: {medicine_name}, pharmacy_id: {pharmacy_id}")
+            print(f"Stock details - Quantity: {stock_quantity}, Batch: {batch_number}, Expiry: {expiry_date}")
+            print(f"Ratelist details - Amount: {ratelist_amount}, Qty/Pack: {quantity_per_pack}")
+            
             cur.execute("""
                 SELECT id FROM pharmacy_medicine 
                 WHERE LOWER(medicine_name) = LOWER(%s) AND pharmacy_id = %s
@@ -93,6 +96,8 @@ def add_medicine():
                 flash('Cannot add duplicate medicine. A medicine with this name already exists.', 'warning')
                 return redirect(url_for('pharm_name.med_details'))
             
+            # Insert medicine details
+            print("Inserting medicine details")
             cur.execute("""
                 INSERT INTO pharmacy_medicine 
                 (pharmacy_id, medicine_name, generic_name, composition, strength, type_id, unit_id, manufacturer_id, added_by, added_date) 
@@ -101,22 +106,29 @@ def add_medicine():
                 (pharmacy_id, medicine_name, generic_name, composition, strength, type_id, unit_id, manufacturer_id, added_by, current_time))
             
             medicine_id = cur.lastrowid
+            print(f"Medicine inserted with ID: {medicine_id}")
             
+            # Insert stock details if provided
             if any([stock_quantity, batch_number, expiry_date, purchase_price, selling_price]):
+                print("Inserting stock details")
                 cur.execute("""
                     INSERT INTO pharmacy_stock 
                     (pharmacy_id, pharmacy_medicine_id, quantity, batch_number, expiry_date, purchase_price, selling_price) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """, (pharmacy_id, medicine_id, stock_quantity or 0, batch_number, expiry_date, 
                       purchase_price or 0, selling_price or 0))
+                print(f"Stock insert rows affected: {cur.rowcount}")
             
+            # Insert ratelist details if provided
             if any([ratelist_amount, quantity_per_pack, discount, cgst, sgst]):
+                print("Inserting ratelist details")
                 cur.execute("""
                     INSERT INTO pharmacy_ratelist 
                     (pharmacy_id, pharmacy_medicine_id, ratelist_name, amount, quantity_per_pack, discount, CGST, SGST) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """, (pharmacy_id, medicine_id, medicine_name, ratelist_amount or 0, quantity_per_pack or 1,
                       discount or 0, cgst or 0, sgst or 0))
+                print(f"Ratelist insert rows affected: {cur.rowcount}")
             
             mysql.connection.commit()
             flash('Medicine, stock, and ratelist added successfully', 'success')
