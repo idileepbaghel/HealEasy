@@ -38,7 +38,7 @@ def addmedstock():
     cur = mysql.connection.cursor()
     
     if request.method=='POST':
-        pharmacy_id = request.form['pharmacy_id']
+        pharmacy_id = session['user'].get('pharmacy_service_id')
         medicine_id  = request.form['medicine_id']
         quantity = request.form['quantity']
         batch_number = request.form['batch_number']

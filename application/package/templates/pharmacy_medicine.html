@@ -46,7 +46,7 @@
                         <!-- <th>Medicine Type</th>
                         <th>Medicine Unit</th> -->
                         <!-- <th>Manufacturer</th> -->
-                        <th>Actions</th>
+                        <th class="act px-5">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,13 +59,11 @@
                         <td>{{item.strength}} {{item.unit_short_name if item.unit_short_name else ''}}</td>
                         <!-- <td>{{item.type_name}}</td>
                         <td>{{item.unit_short_name}}</td> -->
-                        <!-- <td>{{item.manufacturer_name}}</td> -->
-                        <td>
-                            <a href="#" data-bs-toggle="modal" data-bs-target="#viewmeddetails{{item.id}}"
-                                onclick="loadMedicineDetails({{item.id}})">
+                        <!-- <td>{{item.manufacturer_name}}</td> -->                        
+                         <td>                            
+                            <a href="{{ url_for('pharm_name.medicine_details_page', medicine_id=item.id) }}" class="text-decoration-none">
                                 <i class="bi bi-eye mx-3" title="View Details"></i>
                             </a>
-                            {% if item.pharmacy_id != 0 %}
                             <a href="#" data-bs-toggle="modal" data-bs-target="#editmednames{{item.id}}">
                                 <i class="bi bi-pencil-square mx-3"></i>
                             </a>
@@ -74,8 +72,8 @@
                                 <div class="modal-dialog modal-lg modal-dialog-centered">
                                     <div class="modal-content border-0 shadow">
                                         <div class="modal-header form-header">
-                                            <h5 class="modal-title" id="editmednames{{item.id}}">Edit Medicine, Stock &
-                                                Ratelist
+                                            <h5 class="modal-title" id="editmednames{{item.id}}">
+                                                Edit Medicine, Stock & Ratelist
                                             </h5>
                                             <button type="button" class="btn-close btn-close-white"
                                                 data-bs-dismiss="modal" aria-label="Close"></button>
@@ -86,9 +84,12 @@
                                                 method="POST">
 
                                                 <input type="hidden" name="pharmacy_id"
-                                                    value="{{ session['pharmacy']['id'] }}">
+                                                    value="{{ item.pharmacy_id }}">                                                
+                                                    <input type="hidden" name="current_pharmacy_id"
+                                                    value="{{ session['user']['pharmacy_service_id'] }}">
 
-                                                <!-- Medicine Details Section -->
+                                                <!-- Medicine Details Section - Only show if pharmacy_id is 0 -->
+                                                {% if item.pharmacy_id != 0 %}
                                                 <div class="card shadow-sm mb-4">
                                                     <div class="card-header bg-secondary text-white">
                                                         <h6 class="card-title mb-0">
@@ -192,6 +193,49 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                {% else %}
+                                                <!-- Hidden fields to preserve medicine details when pharmacy_id != 0 -->
+                                                <input type="hidden" name="medicine_name" value="{{item.medicine_name}}">
+                                                <input type="hidden" name="genericname" value="{{item.generic_name}}">
+                                                <input type="hidden" name="composition" value="{{item.composition}}">
+                                                <input type="hidden" name="strenght" value="{{item.strength}}">
+                                                <input type="hidden" name="type_id" value="{{item.type_id}}">
+                                                <input type="hidden" name="unit_id" value="{{item.unit_id}}">
+                                                <input type="hidden" name="manufacturer_id" value="{{item.manufacturer_id}}">
+                                                
+                                                <!-- Display medicine info as read-only -->
+                                                <div class="card shadow-sm mb-4">
+                                                    <div class="card-header bg-secondary text-white">
+                                                        <h6 class="card-title mb-0">
+                                                            <i class="bi bi-capsule me-2"></i>Medicine Details (Only Admin can Edit)
+                                                        </h6>
+                                                    </div>
+                                                    <div class="card-body bg-light">
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <strong>Medicine Name:</strong> {{item.medicine_name}}
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <strong>Generic Name:</strong> {{item.generic_name or 'N/A'}}
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <strong>Composition:</strong> {{item.composition or 'N/A'}}
+                                                            </div>
+                                                        </div>
+                                                        <div class="row mt-2">
+                                                            <div class="col-md-4">
+                                                                <strong>Strength:</strong> {{item.strength or 'N/A'}} {{item.unit_short_name or ''}}
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <strong>Type:</strong> {{item.type_name}}
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <strong>Manufacturer:</strong> {{item.manufacturer_name}}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
 
                                                 <!-- Stock Details Section -->
                                                 <div class="card shadow-sm mb-4">
@@ -323,7 +367,7 @@
 
                                                 <div class="text-end mt-3">
                                                     <button type="submit" class="btn bg-gradient-primary px-4">
-                                                        <i class="bi bi-check-circle me-2"></i>Update All
+                                                        <i class="bi bi-check-circle me-2"></i>Update
                                                     </button>
                                                     <button type="button" class="btn bg-gradient-secondary me-2"
                                                         data-bs-dismiss="modal">Cancel</button>
@@ -331,13 +375,8 @@
                                             </form>
                                         </div>
                                     </div>
-                                </div>
+                                </div>                            
                             </div>
-                            {% else %}
-                            <i class="bi bi-pencil-square mx-3 text-muted" style="opacity: 0.5;"
-                                title="Cannot edit master medicines"></i>
-                            {% endif %}
-
                             <!-- View Medicine Details Modal -->
                             <div class="modal fade" id="viewmeddetails{{item.id}}" tabindex="-1"
                                 aria-labelledby="viewmeddetails{{item.id}}" aria-hidden="true">
@@ -452,9 +491,6 @@
     </div>
 </div>
 
-
-
-
 <!-- add new medicine modal -->
 <div class="modal fade" id="addmednames" tabindex="-1" aria-labelledby="addmednames" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -464,10 +500,9 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form action="{{ url_for('pharm_name.add_medicine') }}" method="POST">
+            <div class="modal-body">                <form action="{{ url_for('pharm_name.add_medicine') }}" method="POST">
 
-                    <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
+                    <input type="hidden" name="pharmacy_id" value="{{ session['user']['pharmacy_service_id'] }}">
 
                     <!-- Medicine Details Section -->
                     <div class="card shadow-sm mb-4">
@@ -533,293 +568,4 @@
                                         </select>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="description" class="form-label">Manufacturer<span
-                                                style="color: red;">*</span></label>
-                                        <select class="form-select" name="manufacturer_id" id="manufacturer_id"
-                                            required>
-                                            <option value="">Select Manufacturer</option>
-                                            {% for manufacturer in manu %}
-                                            <option value="{{manufacturer.id}}">{{ manufacturer.manufacturer_name }}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Stock Details Section -->
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-secondary text-white">
-                            <h6 class="card-title mb-0">
-                                <i class="bi bi-box-seam me-2"></i>Stock Details <small
-                                    class="text-muted">(Optional)</small>
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="stock_quantity" class="form-label">Quantity</label>
-                                        <input type="number" class="form-control" name="stock_quantity"
-                                            placeholder="Enter Quantity">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="batch_number" class="form-label">Batch Number</label>
-                                        <input class="form-control" name="batch_number"
-                                            placeholder="Enter Batch Number">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="expiry_date" class="form-label">Expiry Date</label>
-                                        <input class="form-control" type="date" name="expiry_date">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="purchase_price" class="form-label">Purchase Price (₹)</label>
-                                        <input class="form-control" type="number" step="0.01" name="purchase_price"
-                                            placeholder="Enter Purchase Price">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="selling_price" class="form-label">Selling Price (₹)</label>
-                                        <input class="form-control" type="number" step="0.01" name="selling_price"
-                                            placeholder="Enter Selling Price">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ratelist Details Section -->
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-secondary text-white">
-                            <h6 class="card-title mb-0">
-                                <i class="bi bi-receipt me-2"></i>Ratelist Details <small
-                                    class="text-muted">(Optional)</small>
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="ratelist_amount" class="form-label">Amount (₹)</label>
-                                        <input class="form-control" type="number" step="0.01" name="ratelist_amount"
-                                            placeholder="Enter Amount">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="quantity_per_pack" class="form-label">Quantity/Pack</label>
-                                        <input class="form-control" type="number" name="quantity_per_pack"
-                                            placeholder="Enter Quantity per Pack" min="1" value="1">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="discount" class="form-label">Discount (%)</label>
-                                        <input class="form-control" type="number" step="0.01" name="discount"
-                                            placeholder="Enter Discount">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="CGST" class="form-label">CGST (%)</label>
-                                        <input class="form-control" type="number" step="0.01" name="CGST"
-                                            placeholder="Enter CGST">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="SGST" class="form-label">SGST (%)</label>
-                                        <input class="form-control" type="number" step="0.01" name="SGST"
-                                            placeholder="Enter SGST">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-end mt-3">
-                        <button type="submit" class="btn bg-gradient-primary px-4">
-                            <i class="bi bi-check-circle me-2"></i>Add All
-                        </button>
-                        <button type="button" class="btn bg-gradient-secondary me-2"
-                            data-bs-dismiss="modal">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Initialize DataTable for main medicine table
-    $(document).ready(function () {
-        $('#med').DataTable({
-            "pageLength": 25,
-            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            "order": [[1, 'asc']], // Sort by Medicine Name by default
-            "columnDefs": [
-                { "orderable": false, "targets": [8] } // Disable sorting on Actions column
-            ]
-        });
-    });
-
-    // Function to load medicine details (stock and ratelist)
-    function loadMedicineDetails(medicineId) {
-        // Show loading state
-        const stockTableBody = document.getElementById('stockTableBody' + medicineId);
-        const ratelistTableBody = document.getElementById('ratelistTableBody' + medicineId);
-        const stockNoData = document.getElementById('stockNoData' + medicineId);
-        const ratelistNoData = document.getElementById('ratelistNoData' + medicineId);
-
-        // Reset states
-        stockNoData.style.display = 'none';
-        ratelistNoData.style.display = 'none';
-
-        // Show loading in tables
-        stockTableBody.innerHTML = '<tr><td colspan="7" class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</td></tr>';
-        ratelistTableBody.innerHTML = '<tr><td colspan="7" class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</td></tr>';
-
-        // Make AJAX request
-        fetch(`/view-medicine-details/${medicineId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    populateStockTable(medicineId, data.stock_data);
-                    populateRatelistTable(medicineId, data.ratelist_data);
-                    initializeSearch(medicineId);
-                } else {
-                    stockTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
-                    ratelistTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                stockTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
-                ratelistTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
-            });
-    }
-
-    // Function to populate stock table
-    function populateStockTable(medicineId, stockData) {
-        const tableBody = document.getElementById('stockTableBody' + medicineId);
-        const noDataDiv = document.getElementById('stockNoData' + medicineId);
-
-        if (stockData && stockData.length > 0) {
-            let html = '';
-            stockData.forEach((item, index) => {
-                html += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${item.medicine_name || '-'}</td>
-                    <td>${item.quantity || 0}</td>
-                    <td>${item.batch_number || '-'}</td>
-                    <td>${item.expiry_date || '-'}</td>
-                    <td>₹${item.purchase_price || '0.00'}</td>
-                    <td>₹${item.selling_price || '0.00'}</td>
-                </tr>
-            `;
-            });
-            tableBody.innerHTML = html;
-        } else {
-            tableBody.innerHTML = '';
-            noDataDiv.style.display = 'block';
-        }
-    }
-
-    // Function to populate ratelist table
-    function populateRatelistTable(medicineId, ratelistData) {
-        const tableBody = document.getElementById('ratelistTableBody' + medicineId);
-        const noDataDiv = document.getElementById('ratelistNoData' + medicineId);
-
-        if (ratelistData && ratelistData.length > 0) {
-            let html = '';
-            ratelistData.forEach((item, index) => {
-                html += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${item.medicine_name || '-'}</td>
-                    <td>₹${item.amount || '0.00'}</td>
-                    <td>${item.quantity_per_pack || 1}</td>
-                    <td>${item.discount || 0}%</td>
-                    <td>${item.CGST || 0}%</td>
-                    <td>${item.SGST || 0}%</td>
-                </tr>
-            `;
-            });
-            tableBody.innerHTML = html;
-        } else {
-            tableBody.innerHTML = '';
-            noDataDiv.style.display = 'block';
-        }
-    }
-
-    // Function to initialize search functionality
-    function initializeSearch(medicineId) {
-        // Stock search
-        const stockSearch = document.getElementById('stockSearch' + medicineId);
-        const stockTable = document.getElementById('stockTable' + medicineId);
-
-        stockSearch.addEventListener('input', function () {
-            const searchTerm = this.value.toLowerCase();
-            const rows = stockTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-        });
-
-        // Ratelist search
-        const ratelistSearch = document.getElementById('ratelistSearch' + medicineId);
-        const ratelistTable = document.getElementById('ratelistTable' + medicineId);
-
-        ratelistSearch.addEventListener('input', function () {
-            const searchTerm = this.value.toLowerCase();
-            const rows = ratelistTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-        });
-    }
-
-    // Clear search when modal is closed
-    $(document).on('hidden.bs.modal', '[id^="viewmeddetails"]', function () {
-        const medicineId = this.id.replace('viewmeddetails', '');
-        const stockSearch = document.getElementById('stockSearch' + medicineId);
-        const ratelistSearch = document.getElementById('ratelistSearch' + medicineId);
-
-        if (stockSearch) stockSearch.value = '';
-        if (ratelistSearch) ratelistSearch.value = '';
-    });
-</script>
-
-{% endblock %}
+                                {% endblock %}

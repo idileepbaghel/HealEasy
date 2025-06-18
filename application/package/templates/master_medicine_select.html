@@ -29,20 +29,20 @@
       </div>
 
 
-      <form action="{{ url_for('pharm_name.add_from_master') }}" method="POST">
+      <form action="{{ url_for('pharm_name.add_from_master') }}" method="POST">          
         <div class="table-responsive">
-          <table id="master_med" class="table table-sm table-striped align-middle text-nowrap small">
+          <table id="med" style="width: 100%;" class="table table-striped align-middle text-nowrap small">
             <thead>
               <tr>
-                <th width="50px">
-                </th>
+                <th width="50px">Select</th>
                 <th>Medicine Name</th>
                 <th>Composition</th>
                 <th>Strength</th>
                 <th>Already Selected</th>
+                <th class="act px-5">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody>              
               {% for med in master_medicines %}
               <tr>
                 <td>
@@ -61,6 +61,36 @@
                   {% else %}
                   <span class="badge bg-light text-dark">No</span>
                   {% endif %}
+                </td>                
+                <td>
+                  <!-- Always show edit icon for selected medicines, but with different permissions -->
+                  {% if med.medicine_name in selected_medicines %}
+                    {% if med.pharmacy_id == session['pharmacy']['id'] %}
+                    <!-- Pharmacy's own medicine: Allow full editing -->
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#editMedicineFull{{med.id}}" title="Edit All Details">
+                        <i class="bi bi-pencil-square mx-3 text-success"></i>
+                    </a>
+                    {% elif med.pharmacy_id == 0 %}
+                    <!-- Master medicine (pharmacy_id = 0): Check if user is admin -->
+                    {% if session.get('user', {}).get('role') == 'admin' or session.get('is_admin') %}
+                    <!-- Admin: Allow full editing of master medicines -->
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#editMedicineFull{{med.id}}" title="Edit All Details (Admin)">
+                        <i class="bi bi-pencil-square mx-3 text-primary"></i>
+                    </a>
+                    {% else %}
+                    <!-- Regular user: Only allow editing ratelist and stock -->
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#editStockRatelist{{med.id}}" title="Edit Stock & Ratelist Only">
+                        <i class="bi bi-pencil-square mx-3 text-warning"></i>
+                    </a>
+                    {% endif %}
+                    {% else %}
+                    <!-- Other pharmacy's medicine: No edit allowed -->
+                    <i class="bi bi-pencil-square mx-3 text-muted" style="opacity: 0.3;" title="Cannot edit other pharmacy's medicines"></i>
+                    {% endif %}
+                  {% else %}
+                    <!-- Medicine not selected: Show disabled edit icon -->
+                    <i class="bi bi-pencil-square mx-3 text-muted" style="opacity: 0.3;" title="Select medicine first to edit"></i>
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}
@@ -72,18 +102,459 @@
           <button type="submit" class="btn bg-gradient-primary">Add Selected Medicines</button>
         </div>
       </form>
-    </div>
-  </div>
+    </div>  </div>
 </div>
 
-<script>  $(document).ready(function () {
-    $('#master_med').DataTable({
-      "pageLength": 25,
-      "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-      "columnDefs": [
-        { "orderable": false, "targets": [0, 4] } // Disable sorting on checkbox and Already Selected columns
-      ]
+<!-- Edit Stock & Ratelist Modal (for pharmacy_id = 0 and non-admin users) -->
+{% for med in master_medicines %}
+{% if med.medicine_name in selected_medicines and med.pharmacy_id == 0 and not (session.get('user', {}).get('role') == 'admin' or session.get('is_admin')) %}
+<div class="modal fade" id="editStockRatelist{{med.id}}" tabindex="-1" aria-labelledby="editStockRatelist{{med.id}}" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header form-header">
+                <h5 class="modal-title" id="editStockRatelist{{med.id}}">Edit Stock & Ratelist - {{med.medicine_name}}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('pharm_name.edit_stock_ratelist', id=med.id) }}" method="POST">
+                    <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
+                    
+                    <!-- Medicine Info (Read-only) -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-lock me-2"></i>Medicine Information (Read-only - Master Medicine)
+                            </h6>
+                        </div>
+                        <div class="card-body bg-light">
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Note:</strong> You can only edit Stock and Ratelist for master medicines. Contact admin to modify medicine details.
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Name:</strong> {{med.medicine_name}}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Composition:</strong> {{med.composition or '-'}}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Strength:</strong> {{med.strength or '-'}} {{med.unit_short_name or ''}}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Type:</strong> Master Medicine
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-box-seam me-2"></i>Stock Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="stock_quantity" class="form-label">Quantity</label>
+                                        <input type="number" class="form-control" name="stock_quantity" 
+                                               value="{{med.quantity or ''}}" placeholder="Enter Quantity">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="batch_number" class="form-label">Batch Number</label>
+                                        <input class="form-control" name="batch_number" 
+                                               value="{{med.batch_number or ''}}" placeholder="Enter Batch Number">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="expiry_date" class="form-label">Expiry Date</label>
+                                        <input class="form-control" type="date" name="expiry_date" 
+                                               value="{{med.expiry_date or ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="purchase_price" class="form-label">Purchase Price (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="purchase_price" 
+                                               value="{{med.purchase_price or ''}}" placeholder="Enter Purchase Price">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="selling_price" class="form-label">Selling Price (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="selling_price" 
+                                               value="{{med.selling_price or ''}}" placeholder="Enter Selling Price">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ratelist Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-receipt me-2"></i>Ratelist Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="ratelist_amount" class="form-label">Amount (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="ratelist_amount" 
+                                               value="{{med.amount or ''}}" placeholder="Enter Amount">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="quantity_per_pack" class="form-label">Quantity/Pack</label>
+                                        <input class="form-control" type="number" name="quantity_per_pack" 
+                                               value="{{med.quantity_per_pack or ''}}" placeholder="Enter Quantity per Pack" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="discount" class="form-label">Discount (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="discount" 
+                                               value="{{med.discount or ''}}" placeholder="Enter Discount">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="CGST" class="form-label">CGST (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="CGST" 
+                                               value="{{med.CGST or ''}}" placeholder="Enter CGST">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="SGST" class="form-label">SGST (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="SGST" 
+                                               value="{{med.SGST or ''}}" placeholder="Enter SGST">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn bg-gradient-primary px-4">
+                            <i class="bi bi-check-circle me-2"></i>Update Stock & Ratelist
+                        </button>
+                        <button type="button" class="btn bg-gradient-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Full Edit Modal (for pharmacy's own medicines OR admin editing master medicines) -->
+{% if med.medicine_name in selected_medicines and (med.pharmacy_id == session['pharmacy']['id'] or (med.pharmacy_id == 0 and (session.get('user', {}).get('role') == 'admin' or session.get('is_admin')))) %}
+<div class="modal fade" id="editMedicineFull{{med.id}}" tabindex="-1" aria-labelledby="editMedicineFull{{med.id}}" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header form-header">
+                <h5 class="modal-title" id="editMedicineFull{{med.id}}">
+                    {% if med.pharmacy_id == 0 %}
+                    Edit Master Medicine - {{med.medicine_name}} (Admin Access)
+                    {% else %}
+                    Edit Medicine, Stock & Ratelist - {{med.medicine_name}}
+                    {% endif %}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('pharm_name.edit_medicine_combined', id=med.id) }}" method="POST">
+                    <input type="hidden" name="pharmacy_id" value="{{ session['pharmacy']['id'] }}">
+
+                    {% if med.pharmacy_id == 0 %}
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-shield-exclamation me-2"></i>
+                        <strong>Admin Access:</strong> You are editing a master medicine. Changes will affect all pharmacies using this medicine.
+                    </div>
+                    {% endif %}
+
+                    <!-- Medicine Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header {% if med.pharmacy_id == 0 %}bg-primary{% else %}bg-secondary{% endif %} text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-capsule me-2"></i>Medicine Details
+                                {% if med.pharmacy_id == 0 %}(Master Medicine){% endif %}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="type" class="form-label">Medicine Name<span style="color: red;">*</span></label>
+                                        <input type="text" class="form-control" id="type" name="medicine_name" 
+                                               value="{{med.medicine_name}}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Generic Name</label>
+                                        <input class="form-control" id="input" name="genericname" 
+                                               value="{{med.generic_name}}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Composition</label>
+                                        <input class="form-control" type="text" id="input" name="composition" 
+                                               value="{{med.composition}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Strength</label>
+                                        <input class="form-control" type="number" id="input" name="strenght" 
+                                               value="{{med.strength}}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Medicine Type<span style="color: red;">*</span></label>
+                                        <select class="form-select" name="type_id" id="type_id">
+                                            <option value="{{med.type_id}}">{{med.type_name}}</option>
+                                            {% for type in med_types %}
+                                            {% if type.id != med.type_id %}
+                                            <option value="{{type.id}}">{{ type.type_name }}</option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Medicine Unit<span style="color: red;">*</span></label>
+                                        <select class="form-select" name="unit_id" id="unit_id">
+                                            <option value="{{ med.unit_id }}">{{ med.unit_short_name }}</option>
+                                            {% for unit in med_units %}
+                                            {% if unit.id != med.unit_id %}
+                                            <option value="{{unit.id}}">{{ unit.unit_short_name }}</option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Manufacturer<span style="color: red;">*</span></label>
+                                        <select class="form-select" name="manufacturer_id" id="manufacturer_id">
+                                            <option value="{{ med.manufacturer_id }}">{{ med.manufacturer_name }}</option>
+                                            {% for manufacturer in manu %}
+                                            {% if manufacturer.id != med.manufacturer_id %}
+                                            <option value="{{manufacturer.id}}">{{ manufacturer.manufacturer_name }}</option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-box-seam me-2"></i>Stock Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="stock_quantity" class="form-label">Quantity</label>
+                                        <input type="number" class="form-control" name="stock_quantity" 
+                                               value="{{med.quantity or ''}}" placeholder="Enter Quantity">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="batch_number" class="form-label">Batch Number</label>
+                                        <input class="form-control" name="batch_number" 
+                                               value="{{med.batch_number or ''}}" placeholder="Enter Batch Number">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="expiry_date" class="form-label">Expiry Date</label>
+                                        <input class="form-control" type="date" name="expiry_date" 
+                                               value="{{med.expiry_date or ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="purchase_price" class="form-label">Purchase Price (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="purchase_price" 
+                                               value="{{med.purchase_price or ''}}" placeholder="Enter Purchase Price">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="selling_price" class="form-label">Selling Price (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="selling_price" 
+                                               value="{{med.selling_price or ''}}" placeholder="Enter Selling Price">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ratelist Details Section -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-receipt me-2"></i>Ratelist Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="ratelist_amount" class="form-label">Amount (₹)</label>
+                                        <input class="form-control" type="number" step="0.01" name="ratelist_amount" 
+                                               value="{{med.amount or ''}}" placeholder="Enter Amount">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="quantity_per_pack" class="form-label">Quantity/Pack</label>
+                                        <input class="form-control" type="number" name="quantity_per_pack" 
+                                               value="{{med.quantity_per_pack or ''}}" placeholder="Enter Quantity per Pack" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="discount" class="form-label">Discount (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="discount" 
+                                               value="{{med.discount or ''}}" placeholder="Enter Discount">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="CGST" class="form-label">CGST (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="CGST" 
+                                               value="{{med.CGST or ''}}" placeholder="Enter CGST">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="SGST" class="form-label">SGST (%)</label>
+                                        <input class="form-control" type="number" step="0.01" name="SGST" 
+                                               value="{{med.SGST or ''}}" placeholder="Enter SGST">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                    <div class="text-end mt-3">
+                        <button type="submit" class="btn {% if med.pharmacy_id == 0 %}bg-gradient-primary{% else %}bg-gradient-success{% endif %} px-4">
+                            <i class="bi bi-check-circle me-2"></i>
+                            {% if med.pharmacy_id == 0 %}Update Master Medicine{% else %}Update All{% endif %}
+                        </button>
+                        <button type="button" class="btn bg-gradient-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<style>
+/* Edit icon styling for different permission levels */
+.text-success {
+    color: #28a745 !important; /* Green for full access (own medicines) */
+}
+
+.text-primary {
+    color: #007bff !important; /* Blue for admin access (master medicines) */
+}
+
+.text-warning {
+    color: #ffc107 !important; /* Yellow for limited access (stock/ratelist only) */
+}
+
+.text-muted {
+    color: #6c757d !important; /* Gray for disabled */
+}
+
+/* Hover effects for edit icons */
+.bi-pencil-square:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+/* Modal header styling based on medicine type */
+.form-header {
+    background: linear-gradient(45deg, #6c757d, #495057);
+}
+
+.bg-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3) !important;
+}
+
+.bg-warning {
+    background: linear-gradient(45deg, #ffc107, #e0a800) !important;
+}
+
+/* Alert styling */
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #b8daff;
+    color: #0c5460;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+/* Badge styling for permission levels */
+.permission-badge {
+    font-size: 0.7em;
+    padding: 0.2em 0.5em;
+    border-radius: 0.25rem;
+}
+</style>
+
+<script>// Initialize DataTable for main medicine table - same as pharmacy_medicine.html
+    $(document).ready(function () {
+        $('#master_med').DataTable({
+            "pageLength": 25,
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "order": [[1, 'asc']], // Sort by Medicine Name by default
+            "columnDefs": [
+                { "orderable": false, "targets": [0, 4, 5] }, // Disable sorting on checkbox, Already Selected, and Actions columns
+                { "searchable": true, "targets": [1, 2] }, // Enable search on Medicine Name and Composition columns
+                { "searchable": false, "targets": [0, 3, 4, 5] } // Disable search on checkbox, strength, already selected, and actions columns
+            ]
+        });
     });
-  });
 </script>
 {% endblock %}

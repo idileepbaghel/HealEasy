@@ -101,7 +101,8 @@ def login():
             session['loggedin'] = True
             session['user'] = user
             session['user_id'] = user['id']
-            session['selected_user_type'] = user_type  
+            session['username'] = user['username'] 
+            session['selected_user_type'] = user_type
             session['is_admin'] = (user_type == 'admin')  
 
             cur.execute("SELECT * FROM pharmacy_service WHERE id = %s", (user['pharmacy_service_id'],))

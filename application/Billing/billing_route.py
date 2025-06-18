@@ -64,7 +64,7 @@ def generate_bill_post():
         print(f"Amounts: {amounts}")
         print(f"Net Amounts: {net_amounts}")        # Initialize the response structure
         response_data = {
-            "username": str(session.get('username', '48')),  # Get username from session or default to '48'
+            "username": str(session.get('username')), 
             "items": [],
             "summary": {
                 "totalAmount": "0",
