@@ -51,7 +51,7 @@
               <td>{{ item.type_name }}</td>
               <td>{{ item.description }}</td>
               <td>
-                <a href="{{ url_for('edit_bp.edit', id=item.id) }}" data-bs-toggle="modal"
+                <a href="{{ url_for('meds.edit', id=item.id) }}" data-bs-toggle="modal"
                   data-bs-target="#editMeds{{item.id}}">
                   <i class="bi bi-pencil-square mx-3"></i>
                   
@@ -69,7 +69,7 @@
                           aria-label="Close"></button>
                       </div>
                       <div class="modal-body">
-                        <form action="{{ url_for('edit_bp.edit', id=item.id, type_name=item.type_name) }}" method="POST">
+                        <form action="{{ url_for('meds.edit', id=item.id, type_name=item.type_name) }}" method="POST">
                           <div>
                             <div>
                               <label for="type" class="form-label">Type of Medicine<span style="color: red;">*</span></label>
@@ -95,7 +95,7 @@
                 </div>
 
 
-                <a href="{{ url_for('delete_bp.delete', id=item.id, type_name=item.type_name) }}"
+                <a href="{{ url_for('meds.delete', id=item.id, type_name=item.type_name) }}"
                   onclick="return confirm('Are you sure you want to delete {{ item.type_name }}?');">
                   <i class="bi bi-trash-fill mx-3"></i>
                 </a>
@@ -120,7 +120,7 @@
                   aria-label="Close"></button>
               </div>
               <div class="modal-body">
-                <form action="{{ url_for('medicine_bp.medicine') }}" method="POST">
+                <form action="{{ url_for('meds.addmeds') }}" method="POST">
                   <div class="row">
                     
                     <div class="mb-3 col-md-12">

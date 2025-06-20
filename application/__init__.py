@@ -6,13 +6,9 @@ from dotenv import load_dotenv
 from .extensions import mysql, jwt
 
 from .auth.auth import auth_bp
-from .medicine.medicine import medicine_bp
-from .delete_edit.delete import delete_bp
-from .delete_edit.edit import edit_bp
 from .medicine.med_type import med_bp
 from .MedNames.med_names import med_name
-from .data_fetch.route import data_fetch
-from .action.edit import edit
+from .medicine.medicine_unit import med_unit
 from .login.pharmacy_users import users_bp
 from .medicine.medicine_brand import brand_bp
 from .medicine.pharmacy_med import pharm_name
@@ -40,11 +36,7 @@ def create_app():
 
     blueprints = [
         auth_bp,
-        data_fetch,
-        edit,
-        medicine_bp,
-        delete_bp,
-        edit_bp,
+        med_unit,
         med_bp,
         med_name,
         pharm_name,

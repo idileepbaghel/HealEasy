@@ -14,8 +14,8 @@ def dashboard():
             flash('Please login first', 'error')
             return redirect(url_for('auth_bp.login'))
 
-        # Get total medicine count
-        cur.execute("SELECT COUNT(*) AS count FROM master_medicine")
+
+        cur.execute("SELECT COUNT(*) AS count FROM pharmacy_medicine")
         result = cur.fetchone()
         
         try:
@@ -26,7 +26,7 @@ def dashboard():
         except (KeyError, IndexError):
             medicine_count = 0
 
-        # Get count of medicines expiring within 7 days
+
         pharmacy_id = session['user'].get('pharmacy_service_id')        
         cur.execute('''
             SELECT COUNT(*) as count
@@ -46,7 +46,6 @@ def dashboard():
             expiring_count = 0
         
         
-        # Get pharmacy stock data for chart with medicine names
         cur.execute('''
             SELECT pm.medicine_name, ps.quantity
             FROM pharmacy_stock ps
@@ -57,7 +56,6 @@ def dashboard():
         ''', (pharmacy_id,))
         stock_data = cur.fetchall()
         
-        # Prepare chart data
         medicine_names = []
         quantities = []
         
@@ -73,9 +71,57 @@ def dashboard():
         return render_template('dashboard.html', 
                              medicine_count=medicine_count, 
                              expiring_count=expiring_count,
-                             batch_numbers=medicine_names,  # We'll keep the template variable name the same for compatibility
+                             batch_numbers=medicine_names,  
                              quantities=quantities)
 
+
+@auth_bp.route('/api/expiring-medicines', methods=['GET'])
+def get_expiring_medicines():
+    if 'user' not in session:
+        flash('Please login first', 'error')
+        return redirect(url_for('auth_bp.login'))
+    
+    cur = mysql.connection.cursor()
+    pharmacy_id = session['user'].get('pharmacy_service_id')
+    
+    cur.execute('''
+        SELECT 
+            pm.medicine_name,
+            ps.batch_number,
+            ps.quantity,
+            ps.expiry_date,
+            DATEDIFF(ps.expiry_date, CURDATE()) as days_to_expiry
+        FROM pharmacy_stock ps
+        JOIN pharmacy_medicine pm ON ps.pharmacy_medicine_id = pm.id
+        WHERE ps.pharmacy_id = %s
+        AND ps.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+        ORDER BY ps.expiry_date ASC
+    ''', (pharmacy_id,))
+    
+    expiring_medicines = cur.fetchall()
+    cur.close()
+    
+    # Convert to list of dictionaries for JSON response
+    medicines_list = []
+    for medicine in expiring_medicines:
+        if isinstance(medicine, dict):
+            medicines_list.append({
+                'medicine_name': medicine['medicine_name'],
+                'batch_number': medicine.get('batch_number', 'N/A'),
+                'quantity': medicine['quantity'],
+                'expiry_date': medicine['expiry_date'].strftime('%Y-%m-%d') if medicine['expiry_date'] else 'N/A',
+                'days_to_expiry': medicine['days_to_expiry']
+            })
+        else:
+            medicines_list.append({
+                'medicine_name': medicine[0],
+                'batch_number': medicine[1] if medicine[1] else 'N/A',
+                'quantity': medicine[2],
+                'expiry_date': medicine[3].strftime('%Y-%m-%d') if medicine[3] else 'N/A',
+                'days_to_expiry': medicine[4]
+            })
+    
+    return render_template('dashboard.html', medicines_list)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
