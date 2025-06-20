@@ -51,7 +51,6 @@ def dashboard():
             FROM pharmacy_stock ps
             JOIN pharmacy_medicine pm ON ps.pharmacy_medicine_id = pm.id
             WHERE ps.pharmacy_id = %s
-            ORDER BY ps.quantity DESC
             LIMIT 10
         ''', (pharmacy_id,))
         stock_data = cur.fetchall()

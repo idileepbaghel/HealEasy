@@ -170,10 +170,9 @@
         <div>
           <strong>{{ session['pharmacy']['pharmacy_name'] }}</strong>
         </div>
-      </a>      <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="userDropdown">
-        {% if session.get('is_admin') %}
-        <li><a class="dropdown-item" href="{{ url_for('users_bp.users') }}">User List</a></li>
-        {% endif %}
+      </a>      
+      <ul class="dropdown-menu dropdown-menu-light text-dark" aria-labelledby="userDropdown">
+        <li><a class="dropdown-item" href="{{ url_for('pharm_details.details') }}">Profile</a></li>
       </ul>
 
       {% endif %}

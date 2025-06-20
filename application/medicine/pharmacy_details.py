@@ -6,16 +6,37 @@ pharm_details = Blueprint('pharm_details', __name__)
 
 @pharm_details.route('/pharm_details', methods=['GET','POST'])
 def details():
+    # Get pharmacy id from session
+    if 'user' not in session:
+        flash('Please login first', 'error')
+        return redirect(url_for('auth_bp.login'))
+        
+    pharmacy_id = session['user'].get('pharmacy_service_id')
+    
     cur = mysql.connection.cursor()
-    cur.execute("""SELECT * FROM pharmacy_service""")
-    items = cur.fetchall()
+    cur.execute("""SELECT * FROM pharmacy_service WHERE id = %s""", (pharmacy_id,))
+    item = cur.fetchone()
     mysql.connection.commit()
     cur.close()
     
-    return render_template('pharmacy_details.html', items=items)
+    if not item:
+        flash('Pharmacy details not found', 'error')
+        return redirect(url_for('auth_bp.dashboard'))
+    
+    return render_template('pharmacy_details.html', item=item)
 
 @pharm_details.route('/edit_pharm_details/<int:id>', methods=['POST','GET'])
 def edit_details(id):
+    # Ensure user can only edit their own pharmacy
+    if 'user' not in session:
+        flash('Please login first', 'error')
+        return redirect(url_for('auth_bp.login'))
+        
+    session_pharmacy_id = session['user'].get('pharmacy_service_id')
+    if int(id) != int(session_pharmacy_id):
+        flash('You can only edit your own pharmacy details', 'error')
+        return redirect(url_for('pharm_details.details'))
+    
     if request.method == 'POST':
         pharmacy_id = request.form['id']
         
@@ -47,7 +68,7 @@ def edit_details(id):
         mysql.connection.commit()
         cur.close()
         
-        flash('Pharmacy service updated successfully.', 'success')
+        flash('Pharmacy details updated successfully.', 'success')
         return redirect(url_for('pharm_details.details'))
     
     # For GET request, fetch the pharmacy details
