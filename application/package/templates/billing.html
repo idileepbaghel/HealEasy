@@ -26,6 +26,46 @@
         font-size: 0.875rem;
     }
 
+    /* Custom Tooltip Styles */
+    .custom-tooltip {
+        position: relative;
+        display: inline-block;
+    }
+
+    .custom-tooltip .tooltip-text {
+        visibility: hidden;
+        width: auto;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 10px;
+        position: absolute;
+        z-index: 1500;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        white-space: nowrap;
+    }
+
+    .custom-tooltip .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+
+    .custom-tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+
     @media (max-width: 1400px) {
         .form-label {
             font-size: 0.8rem;
@@ -152,13 +192,14 @@
                                             <label class="form-label d-block mb-2">Net Amt</label>
                                             <input type="text" class="form-control net-amount" name="net_amount[]"
                                                 readonly>
-                                        </div>
+                                        </div>                                        
                                         <div class="col-auto d-flex align-items-end">
-                                            <button type="button" class="btn btn-danger remove-row mb-2"
-                                                style="display: none;" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Remove Row">
-                                                <i class="bi bi-dash-circle-fill"></i>
-                                            </button>
+                                            <div class="custom-tooltip">
+                                                <button type="button" class="btn btn-danger remove-row mb-2"
+                                                    style="display: none;" data-toggle="tooltip" data-placement="top" title="Remove Row">
+                                                    <i class="bi bi-dash-circle-fill"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -215,11 +256,11 @@
 
 
 
-<script>    document.addEventListener('DOMContentLoaded', function () {
+<script>    
+    document.addEventListener('DOMContentLoaded', function () {
         console.log('Script initialized');
-        // Initialize tooltips
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+        
 
         const addRowBtn = document.getElementById('addRow');
         const form = document.getElementById('billForm');
@@ -408,11 +449,13 @@
         const firstRow = document.querySelector('.medicine-row');
 
         if (container && firstRow) {
-            const newRow = firstRow.cloneNode(true);
-            // Show remove button for new row
-            const removeButton = newRow.querySelector('.remove-row');
-            if (removeButton) {
-                removeButton.style.display = 'block';
+            const newRow = firstRow.cloneNode(true);            // Show remove button for new row
+            const removeButtonWrapper = newRow.querySelector('.custom-tooltip');
+            if (removeButtonWrapper) {
+                const removeButton = removeButtonWrapper.querySelector('.remove-row');
+                if (removeButton) {
+                    removeButton.style.display = 'block';
+                }
             }
 
             const selects = newRow.querySelectorAll('select');
@@ -435,13 +478,8 @@
 
             container.appendChild(newRow);
             console.log('New row added');
-            setupSearchableDropdown(newRow);
-            setupEventListeners();
+            setupSearchableDropdown(newRow);            setupEventListeners();
             updateRemoveButtons();
-
-            // Initialize tooltips for the new row
-            const newTooltips = newRow.querySelectorAll('[data-bs-toggle="tooltip"]');
-            newTooltips.forEach(element => new bootstrap.Tooltip(element));
         } else {
             console.error('Container or row template not found');
         }
@@ -645,4 +683,10 @@
 
 </script>
 
+<script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        });
+    </script>
 {% endblock %}
+

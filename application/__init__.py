@@ -1,7 +1,6 @@
 from flask import Flask
 from config import Config
 from flask_cors import CORS
-import os
 from dotenv import load_dotenv
 from .extensions import mysql, jwt
 

@@ -30,15 +30,31 @@
         }
     }
     
+    
     /* Card styling */
-    .profile-card {
+    .card {
         border: none;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
-    .profile-card:hover {
+    .card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    /* Profile card specific styling */
+    .profile-card {
+        height: 100%;
+        width: 100%;
+        margin: 0 auto;
+        border-radius: 10px;
+    }
+    
+    .card-container {
+        display: flex;
+        justify-content: center;
+        align-items: stretch;
+        margin-bottom: 20px;
     }
 </style>
 
@@ -73,74 +89,103 @@
                     <div class="row mb-4">
                         <div class="col-md-12 text-center mb-4">
                             <div class="display-6 fw-bold text-dark">{{ item.pharmacy_name }}</div>
-                            <div class="text-muted fs-5 mt-2">
+                            <div class="text-muted fs-6 mt-2">
                                 <span class="badge bg-success p-2">
                                     <i class="bi bi-shield-check me-1"></i>License: {{ item.pharmacy_license_number }}
                                 </span>
                             </div>
                             <hr class="my-4 mx-auto w-50" style="border-top: 2px dashed #e9ecef;">
                         </div>
-                    </div><div class="row">
+                    </div>                    <div class="row">
                         <div class="col-lg-6 col-md-12 mb-4">
-                            <div class="card h-100 border-0 shadow-sm profile-card">
-                                <div class="card-header bg-light">
-                                    <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Business Details</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="fw-bold">Address:</label>
-                                        <p class="text-dark">{{ item.pharmacy_address }}</p>
+                            <div class="card-container">
+                                <div class="card border-0 shadow-sm profile-card">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Business Details</h5>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-4 col-sm-12 mb-2">
-                                            <label class="fw-bold">City:</label>
-                                            <p class="text-dark">{{ item.pharmacy_city }}</p>
+                                    <div class="card-body">                                    
+                                        <div class="mb-0">
+                                            <div class="d-flex">
+                                                <label class="fw-bold fs-6 me-2">Address:</label>
+                                                <p class="text-dark fw-normal small mb-0 mt-1">{{ item.pharmacy_address }}</p>
+                                            </div>
                                         </div>
-                                        <div class="col-md-4 col-sm-12 mb-2">
-                                            <label class="fw-bold">State:</label>
-                                            <p class="text-dark">{{ item.pharmacy_state }}</p>
+                                        <div class="row">
+                                            <div class="col-md-6 col-sm-12 mb-0">
+                                                <div class="d-flex">
+                                                    <label class="fw-bold fs-6 me-2">City:</label>
+                                                    <p class="text-dark fw-normal small mb-0 mt-1">{{ item.pharmacy_city }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 col-sm-12 mb-0">
+                                                <div class="d-flex">
+                                                    <label class="fw-bold fs-6 me-2">State:</label>
+                                                    <p class="text-dark fw-normal small mb-0 mt-1">{{ item.pharmacy_state }}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-md-4 col-sm-12 mb-2">
-                                            <label class="fw-bold">Pincode:</label>
-                                            <p class="text-dark">{{ item.pharmacy_pincode }}</p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="d-flex">
+                                                    <label class="fw-bold fs-6 me-2">Email:</label>
+                                                    <p class="text-dark fw-normal small mb-0 mt-1">{{ item.pharmacy_email }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="d-flex">
+                                                    <label class="fw-bold fs-6 me-2">Pincode:</label>
+                                                    <p class="text-dark fw-normal small mb-0 mt-1">{{ item.pharmacy_pincode }}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="fw-bold">Email:</label>
-                                        <p class="text-dark">{{ item.pharmacy_email }}</p>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="fw-bold">Invoice Range:</label>
-                                        <p class="text-dark">{{ item.invoice_range }}</p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="d-flex">
+                                                    <label class="fw-bold fs-6 me-2">Invoice Range:</label>
+                                                    <p class="text-dark fw-normal small mb-0 mt-1">{{ item.invoice_range }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="col-lg-6 col-md-12 mb-4">
-                            <div class="card h-100 border-0 shadow-sm profile-card">
-                                <div class="card-header bg-light">
-                                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Contact Information</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="fw-bold">Primary Contact:</label>
-                                        <div class="d-flex align-items-center mt-2">
-                                            <div>
-                                                <p class="text-dark mb-0"><strong>Name:</strong> {{ item.pharmacy_primary_name }}</p>
-                                                <p class="text-dark"><strong>Phone:</strong> {{ item.pharmacy_primary_number }}</p>
-                                            </div>
-                                        </div>
+                            <div class="card-container">
+                                <div class="card border-0 shadow-sm profile-card">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Contact Information</h5>
                                     </div>
-                                    <hr class="my-3">
-                                    <div class="mb-3">
-                                        <label class="fw-bold">Secondary Contact:</label>
-                                        <div class="d-flex align-items-center mt-2">
-                                            <div>
-                                                <p class="text-dark mb-0"><strong>Name:</strong> {{ item.pharmacy_secondary_name }}</p>
-                                                <p class="text-dark"><strong>Phone:</strong> {{ item.pharmacy_secondary_number }}</p>
+                                    <div class="card-body">  
+                                        <div class="row">
+                                            <div class="mb-3 col-md-6">
+                                                <label class="fw-bold fs-6">Primary Contact:</label>
+                                                <div class="mt-2">
+                                                    <div class="d-flex mb-1">
+                                                        <span class="fw-bold me-2 small">Name:</span> 
+                                                        <span class="fw-normal small">{{ item.pharmacy_primary_name }}</span>
+                                                    </div>
+                                                    <div class="d-flex">
+                                                        <span class="fw-bold me-2 small">Phone:</span>
+                                                        <span class="fw-normal small">{{ item.pharmacy_primary_number }}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                            <div class="mb-3 col-md-6">
+                                                <label class="fw-bold fs-6">Secondary Contact:</label>
+                                                <div class="mt-2">
+                                                    <div class="d-flex mb-1">
+                                                        <span class="fw-bold me-2 small">Name:</span> 
+                                                        <span class="fw-normal small">{{ item.pharmacy_secondary_name }}</span>
+                                                    </div>
+                                                    <div class="d-flex">
+                                                        <span class="fw-bold me-2 small">Phone:</span>
+                                                        <span class="fw-normal small">{{ item.pharmacy_secondary_number }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>                                  
                                     </div>
                                 </div>
                             </div>
