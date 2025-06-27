@@ -2,13 +2,54 @@
 
 {% block content %}
 
-<!-- Add these lines after the existing CSS -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css">
+<!-- Add custom CSS for cards -->
+<style>
+  .order-card {
+    margin-bottom: 20px;
+    transition: all 0.3s;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .order-card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+  }
+  .order-card .card-footer {
+    background-color: rgba(0, 0, 0, 0.03);
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem 1rem;
+  }
+  .order-card .card-footer .btn {
+    margin-left: 5px;
+  }
+  .task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .medicine-details {
+    display: flex;
+    flex-direction: column;
+  }
+  .detail-item {
+    margin-bottom: 8px;
+  }
+  .detail-label {
+    font-weight: bold;
+    color: #6c757d;
+  }
+  .search-container {
+    margin-bottom: 20px;
+  }
+</style>
 
 <div class="container-fluid mt-9">
  
-      {% with messages = get_flashed_messages(with_categories=true) %}
+      
+
+      <div class="row">
+        {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
       {% for category, message in messages %}
       <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
@@ -23,109 +64,79 @@
       {% endfor %}
       {% endif %}
       {% endwith %}
-
-      <div class="row">
         <div class="col-md-2"></div>
           <div class="col-md-10 px-5">
             <div class="card mb-4">
-        <div class="card-header pb-0 d-flex justify-content-between">
-          <h6>Special Orders</h6>
-          <button type="button" class="btn bg-gradient-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
-            Add Task
-          </button>
-        </div>
-        <div class="card-body px-0 pt-0 pb-2">
-          <div class="table-responsive p-0">
-            <table id="med" style="width: 100%;" class="table table-striped">
-              <thead>
-                <tr>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Medicine Name</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Description</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Requester Name</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Contact</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Quantity</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Order From</th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for task in tasks %}
-                <tr>
-                  <td>{{ task.medicine_name }}</td>
-                  <td>{{ task.description }}</td>
-                  <td>{{ task.requester_name }}</td>
-                  <td>{{ task.requester_contact }}</td>
-                  <td>{{ task.quantity }}</td>
-                  <td>{{ task.order_from }}</td>
-                  <td>
-                    <a href="#" onclick="editTask('{{ task.id }}')" data-bs-toggle="modal"
-                      data-bs-target="#editTaskModal">
-                      <i class="fas fa-edit text-primary me-2"></i>
-                    </a>
-
-                    <div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel"
-                      aria-hidden="true">
-                      <div class="modal-dialog">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title" id="editTaskModalLabel">Edit Special Order</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              
+              <div class="card-header mt-3 pb-0 d-flex justify-content-between">
+                <h4>Special Orders</h4>
+                <button type="button" class="btn bg-gradient-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                  Add Task
+                </button>
+              </div>
+              <div class="card-body">
+                
+                <!-- Cards Container -->
+                <div class="row d-flex justify-content-center" id="ordersContainer">
+                  {% for task in tasks %}
+                  <div class="col-md-6 col-lg-4 task-card" data-task-id="{{ task.id }}">
+                    <div class="card order-card">
+                      <div class="card-body">
+                        <div class="task-header mb-3">
+                          <h5 class="card-title">{{ task.medicine_name }}</h5>
+                          <span class="badge bg-secondary">Qty: {{ task.quantity }}</span>
+                        </div>
+                        
+                        <div class="medicine-details">
+                          <div class="detail-item">
+                            <span class="detail-label">Description:</span>
+                            <span>{{ task.description or 'N/A' }}</span>
                           </div>
-                          <form id="editTaskForm" action="{{ url_for('todo.edit_task') }}" method="POST">
-                            <input type="hidden" id="edit_task_id" name="task_id">
-                            <div class="modal-body">
-                              <!-- Same fields as add modal -->
-                              <div class="mb-3">
-                                <label for="edit_medicine_name" class="form-label">Medicine Name <span
-                                    class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_medicine_name" value="{{ task.medicine_name }}" required>
-                              </div>
-                              <div class="mb-3">
-                                <label for="edit_description" class="form-label">Description</label>
-                                <textarea class="form-control" id="edit_description" name="description"
-                                  rows="3"></textarea>
-                              </div>
-                              <div class="mb-3">
-                                <label for="edit_requester_name" class="form-label">Requester Name</label>
-                                <input type="text" class="form-control" id="edit_requester_name" value="{{ task.requester_name }}">
-                              </div>
-                              <div class="mb-3">
-                                <label for="edit_requester_contact" class="form-label">Contact</label>
-                                <input type="number" class="form-control" id="phone"
-                                  value="{{ task.requester_contact }}">
-                              </div>
-                              <div class="mb-3">
-                                <label for="edit_quantity" class="form-label">Quantity <span
-                                    class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="edit_quantity" value="{{ task.quantity }}" required
-                                  min="1">
-                              </div>
-                              <div class="mb-3">
-                                <label for="edit_order_from" class="form-label">Order From</label>
-                                <input type="text" class="form-control" id="edit_order_from" value="{{ task.order_from }}">
-                              </div>
-                            </div>
-                            <div class="modal-footer">
-                              <button type="button" class="btn bg-gradient-secondary"
-                                data-bs-dismiss="modal">Close</button>
-                              <button type="submit" class="btn bg-gradient-primary">Update</button>
-                            </div>
-                          </form>
+                          
+                          <div class="detail-item">
+                            <span class="detail-label">Requester:</span>
+                            <span>{{ task.requester_name or 'N/A' }}</span>
+                          </div>
+                          
+                          <div class="detail-item">
+                            <span class="detail-label">Contact:</span>
+                            <span>{{ task.requester_contact or 'N/A' }}</span>
+                          </div>
+                          
+                          <div class="detail-item">
+                            <span class="detail-label">Order From:</span>
+                            <span>{{ task.order_from or 'N/A' }}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                      <div class="card-footer ">
+                        <!-- Add to Pharmacy Button -->
+                        <a href="{{ url_for('pharm_name.add_medicine') }}?from_special_order=true&medicine_name={{ task.medicine_name | urlencode }}"
+                          class="btn btn-sm bg-gradient-primary">
+                          <i class="fas fa-plus-circle me-1"></i> Add to Pharmacy
+                        </a>
 
-                    <a href="#" onclick="deleteTask('{{ task.id }}')">
-                      <i class="fas fa-trash text-danger"></i>
-                    </a>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+                        
+                        <!-- <a href="#" class="btn btn-sm bg-gradient-info" onclick="editTask('{{ task.id }}')" data-bs-toggle="modal" data-bs-target="#editTaskModal">
+                          <i class="fas fa-edit me-1"></i> Edit
+                        </a> -->
+                        
+                        <a href="#" class="btn btn-sm bg-gradient-secondary" onclick="deleteTask('{{ task.id }}')">
+                          <i class="fas fa-trash me-1"></i> Delete
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+                
+                <!-- No Results Message -->
+                <div id="noResults" class="text-center mt-4 d-none">
+                  <h5 class="text-muted">No special orders found</h5>
+                  <p>Add a new special order to get started</p>
+                </div>
+              </div>
+            </div>
           </div>
       </div>
       
@@ -176,7 +187,49 @@
 </div>
 
 <!-- Edit Task Modal -->
-
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editTaskModalLabel">Edit Special Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editTaskForm" action="{{ url_for('todo.edit_task') }}" method="POST">
+        <input type="hidden" id="edit_task_id" name="task_id">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit_medicine_name" class="form-label">Medicine Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="edit_medicine_name" name="medicine_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_description" class="form-label">Description</label>
+            <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="edit_requester_name" class="form-label">Requester Name</label>
+            <input type="text" class="form-control" id="edit_requester_name" name="requester_name">
+          </div>
+          <div class="mb-3">
+            <label for="edit_requester_contact" class="form-label">Contact</label>
+            <input type="number" class="form-control" id="edit_requester_contact" name="requester_contact">
+          </div>
+          <div class="mb-3">
+            <label for="edit_quantity" class="form-label">Quantity <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="edit_quantity" name="quantity" required min="1">
+          </div>
+          <div class="mb-3">
+            <label for="edit_order_from" class="form-label">Order From</label>
+            <input type="text" class="form-control" id="edit_order_from" name="order_from">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn bg-gradient-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <script>
   function editTask(taskId) {
@@ -199,64 +252,103 @@
         .then(() => window.location.reload());
     }
   }
+  
+  function addToPharmacy(taskId) {
+    if (confirm('Are you sure you want to add this medicine to your pharmacy?')) {
+      fetch(`/todo/add_to_pharmacy/${taskId}`, { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Hide the task card
+          const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+          if (taskCard) {
+            taskCard.remove();
+          }
+          
+          // Check if there are no more tasks
+          checkNoResults();
+          
+          // Show success message
+          alert('Medicine added to pharmacy inventory!');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+      });
+    }
+  }
 </script>
 
-<!-- DataTables JS -->
+<!-- Add jQuery if not already included -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap5.min.js"></script>
 
 <script>
 $(document).ready(function() {
-    $('#tasksTable').DataTable({
-        responsive: true,
-        pageLength: 10,
-        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
-        order: [[0, 'asc']],
-        language: {
-           search: "_INPUT_",
-            searchPlaceholder: "Search records",
-            lengthMenu: '<span class="px-2">Show _MENU_ entries</span>',
-            info: '<span class="px-2">Showing _START_ to _END_ of _TOTAL_ entries</span>',
-            paginate: {
-                first: '<span class="px-2"><<</span>',
-                last: '<span class="px-2">>></span>',
-                next: '<span class="px-2"><</span>',
-                previous: '<span class="px-2">></span>'
-            }
-        },
-        dom: '<"row"<"col-md-6"l><"col-md-6 text-end"f>>' +
-             '<"row"<"col-sm-12"tr>>' +
-             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-        buttons: [
-            'copy', 'csv', 'excel', 'pdf', 'print'
-        ],
-        columnDefs: [
-            {
-                targets: -1,
-                orderable: false,
-                searchable: false
-            }
-        ]
+    // Search functionality
+    $('#searchInput').on('keyup', function() {
+        const value = $(this).val().toLowerCase();
+        $('.task-card').filter(function() {
+            // Search through all text content in the card
+            const matches = $(this).text().toLowerCase().indexOf(value) > -1;
+            $(this).toggle(matches);
+        });
+        
+        // Check if any results are visible
+        checkNoResults();
     });
+    
+    // Initial check for no results
+    checkNoResults();
 });
-</script>
 
-<script>
-    const phoneInput = document.getElementById('phone');
-  
-    phoneInput.addEventListener('input', function () {
-      // Remove all non-digit characters
-      let digits = this.value.replace(/\D/g, '');
-  
-      // Limit to first 10 digits
-      if (digits.length > 10) {
-        digits = digits.slice(0, 10);
-      }
-  
-      this.value = digits;
-    });
-  </script>
+// Function to check if there are no visible results and show/hide the no results message
+function checkNoResults() {
+    const visibleItems = $('.task-card:visible').length;
+    if (visibleItems === 0) {
+        $('#noResults').removeClass('d-none');
+    } else {
+        $('#noResults').addClass('d-none');
+    }
+}
+
+// Phone input validation
+const phoneInput = document.getElementById('phone');
+if (phoneInput) {
+  phoneInput.addEventListener('input', function () {
+    // Remove all non-digit characters
+    let digits = this.value.replace(/\D/g, '');
+
+    // Limit to first 10 digits
+    if (digits.length > 10) {
+      digits = digits.slice(0, 10);
+    }
+
+    this.value = digits;
+  });
+}
+
+// Same for edit form phone input
+const editPhoneInput = document.getElementById('edit_requester_contact');
+if (editPhoneInput) {
+  editPhoneInput.addEventListener('input', function () {
+    // Remove all non-digit characters
+    let digits = this.value.replace(/\D/g, '');
+
+    // Limit to first 10 digits
+    if (digits.length > 10) {
+      digits = digits.slice(0, 10);
+    }
+
+    this.value = digits;
+  });
+}
+</script>
 {% endblock %}

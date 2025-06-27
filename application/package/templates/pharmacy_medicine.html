@@ -491,6 +491,26 @@
     </div>
 </div>
 
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('from_special_order') === 'true') {
+      const medicineName = urlParams.get('medicine_name');
+      const medInput = document.querySelector('input[name="medsname"]');
+      if (medicineName && medInput) {
+        medInput.value = decodeURIComponent(medicineName);
+      }
+      const modal = new bootstrap.Modal(document.getElementById('addmednames'));
+      modal.show();
+    }
+  });
+</script>
+
+
+
+
 <!-- add new medicine modal -->
 <div class="modal fade" id="addmednames" tabindex="-1" aria-labelledby="addmednames" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -500,7 +520,8 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
-            <div class="modal-body">                <form action="{{ url_for('pharm_name.add_medicine') }}" method="POST">
+            <div class="modal-body">                
+                <form action="{{ url_for('pharm_name.add_medicine') }}" method="POST">
 
                     <input type="hidden" name="pharmacy_id" value="{{ session['user']['pharmacy_service_id'] }}">
 

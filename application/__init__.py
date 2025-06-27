@@ -18,6 +18,7 @@ from .Billing.stock_report import lowstock
 from .Billing.business_report import report_bp
 from .medicine.pharmacy_details import pharm_details
 from .reports.expiry_report import expiry_report
+from .reports.lowstock import med_lowstock
 from .action.api import api_bp
 from .action.todo import todo
 
@@ -49,11 +50,11 @@ def create_app():
         report_bp,
         api_bp,
         todo,
-        expiry_report
+        expiry_report,
+        med_lowstock
     ]
     
     for blueprint in blueprints:
         app.register_blueprint(blueprint)
         
     return app
-    

@@ -509,7 +509,7 @@
             <span class="nav-link-text ms-1">Billing</span>
           </a>
         </li>
-        <li class="nav-item">          
+        <!-- <li class="nav-item">          
           <a class="nav-link  " href="{{url_for('todo.index')}}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
               <svg width="12px" height="12px" viewBox="0 0 42 42" version="1.1" xmlns="http://www.w3.org/2000/svg"
@@ -519,7 +519,6 @@
                   <g transform="translate(-2319.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
                     <g transform="translate(1716.000000, 291.000000)">
                       <g transform="translate(603.000000, 0.000000)">
-                        <!-- Todo list/checklist icon -->
                         <path class="color-background"
                           d="M36,2 C38.209,2 40,3.791 40,6 L40,36 C40,38.209 38.209,40 36,40 L6,40 C3.791,40 2,38.209 2,36 L2,6 C2,3.791 3.791,2 6,2 L36,2 Z">
                         </path>
@@ -534,7 +533,7 @@
             </div>
             <span class="nav-link-text ms-1">Todo Tasks</span>
           </a>
-        </li>
+        </li> -->
         <li class="nav-item dropdown">          
           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             <div
@@ -722,26 +721,30 @@
         <!-- Statistics Cards with enhanced responsive grid -->
         <div class="row g-3 mb-4">
           <!-- Each card uses a more granular responsive approach -->
+          
+
+          <!-- Low Stock Medicines Card -->
           <div class="col-12 col-sm-6 col-md-6 col-lg-6 col-xl-3">
-            <div class="card text-success h-100 shadow-sm">
+            <div class="card text-warning h-100 shadow-sm" onclick="window.location.href='{{ url_for('med_lowstock.stocks') }}'" style="cursor: pointer;">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                   <div class="flex-grow-1">
-                    <h4 class="fw-bold mb-1">₹10,500</h4>
-                    <small class="text-uppercase">Total Income</small>
+                    <h4 class="fw-bold mb-1">{{ low_stock_count }}</h4>
+                    <small class="text-uppercase">Low Stock Medicines</small>
                   </div>
                   <div class="flex-shrink-0 ms-3">
-                    <i class="bi bi-currency-rupee fs-2"></i>
+                    <i class="bi bi-box fs-2"></i>
                   </div>
                 </div>
-                <div class="stat-footer text-success d-flex justify-content-between align-items-center rounded mt-3 px-3 py-2">
-                  <small>20% increase</small>
-                  <i class="bi bi-caret-up-fill"></i>
+                <div class="stat-footer text-warning d-flex justify-content-between align-items-center rounded mt-3 px-3 py-2">
+                  <small>Need re-ordering</small>
+                  <i class="bi bi-exclamation-triangle"></i>
                 </div>
               </div>
             </div>
           </div>
-
+          
+          
           <div class="col-12 col-sm-6 col-md-6 col-lg-6 col-xl-3">
             <div class="card text-danger h-100 shadow-sm" onclick="window.location.href='{{ url_for('expiry_report.index') }}'" style="cursor: pointer;">
               <div class="card-body">
@@ -764,7 +767,7 @@
           
           
           <div class="col-12 col-sm-6 col-md-6 col-lg-6 col-xl-3">
-            <div class="card text-info h-100 shadow-sm" >
+            <div class="card text-info h-100 shadow-sm" onclick="window.location.href='{{ url_for('pharm_name.med_details') }}'" style="cursor: pointer;">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start" id="inventoryCard">
                   <div class="flex-grow-1">
@@ -782,22 +785,22 @@
               </div>
             </div>
           </div>
-
+          
+          
           <div class="col-12 col-sm-6 col-md-6 col-lg-6 col-xl-3">
-            <div class="card text-secondary h-100 shadow-sm">
+            <div class="card text-secondary h-100 shadow-sm special-orders-card" style="cursor: pointer;" onclick="window.location.href='{{ url_for('todo.index') }}'">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                   <div class="flex-grow-1">
-                    <h4 class="fw-bold mb-1">3,500</h4>
-                    <small class="text-uppercase">Visitors</small>
+                    <h4 class="fw-bold mb-1">Special Orders</h4>
                   </div>
                   <div class="flex-shrink-0 ms-3">
-                    <i class="bi bi-geo-alt fs-2"></i>
+                    <i class="bi bi-list-task fs-2"></i>
                   </div>
                 </div>
                 <div class="stat-footer text-secondary d-flex justify-content-between align-items-center rounded mt-3 px-3 py-2">
-                  <small>5% decrease</small>
-                  <i class="bi bi-caret-down-fill"></i>
+                  <small>View orders</small>
+                  <i class="bi bi-arrow-right"></i>
                 </div>
               </div>
             </div>

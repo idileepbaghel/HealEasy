@@ -45,7 +45,10 @@ def dashboard():
         except (KeyError, IndexError):
             expiring_count = 0
         
-        
+          # Get low stock count
+        from application.reports.lowstock import get_low_stock_count
+        low_stock_count = get_low_stock_count()
+
         cur.execute('''
             SELECT pm.medicine_name, ps.quantity
             FROM pharmacy_stock ps
@@ -70,6 +73,7 @@ def dashboard():
         return render_template('dashboard.html', 
                              medicine_count=medicine_count, 
                              expiring_count=expiring_count,
+                             low_stock_count=low_stock_count,
                              batch_numbers=medicine_names,  
                              quantities=quantities)
 

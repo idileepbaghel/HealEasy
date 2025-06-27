@@ -137,3 +137,62 @@ def delete_task(task_id):
         return jsonify({'error': str(e)}), 500
     finally:
         cur.close()
+
+@todo.route('/todo/mark_as_added/<int:task_id>', methods=['POST'])
+def mark_as_added(task_id):
+    if 'user' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+        
+    pharmacy_id = session['user'].get('pharmacy_service_id')
+    if not pharmacy_id:
+        return jsonify({'error': 'Pharmacy ID not found'}), 401
+
+    cur = mysql.connection.cursor()
+    try:
+        # Verify that the task belongs to this pharmacy
+        cur.execute('SELECT pharmacy_service_id FROM pharmacy_special_order WHERE id = %s', (task_id,))
+        task = cur.fetchone()
+        if not task or task['pharmacy_service_id'] != pharmacy_id:
+            return jsonify({'error': 'Unauthorized access or task not found'}), 403
+            
+        cur.execute('UPDATE pharmacy_special_order SET added_to_pharmacy = TRUE WHERE id = %s AND pharmacy_service_id = %s', (task_id, pharmacy_id))
+        mysql.connection.commit()
+
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+
+@todo.route('/todo/add_to_pharmacy/<int:task_id>', methods=['POST'])
+def add_to_pharmacy(task_id):
+    if 'user' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+        
+    pharmacy_id = session['user'].get('pharmacy_service_id')
+    if not pharmacy_id:
+        return jsonify({'error': 'Pharmacy ID not found'}), 401
+
+    cur = mysql.connection.cursor()
+    try:
+        # Verify that the task belongs to this pharmacy
+        cur.execute('SELECT * FROM pharmacy_special_order WHERE id = %s AND pharmacy_service_id = %s', (task_id, pharmacy_id))
+        task = cur.fetchone()
+        if not task:
+            return jsonify({'error': 'Unauthorized access or task not found'}), 403
+            
+        # Here you would add code to actually add the medicine to pharmacy inventory
+        # This is a placeholder where you would implement the actual logic
+        # For example: 
+        # cur.execute('INSERT INTO pharmacy_inventory (pharmacy_id, medicine_name, quantity) VALUES (%s, %s, %s)', 
+        #            (pharmacy_id, task['medicine_name'], task['quantity']))
+        
+        # After adding to inventory, delete the special order
+        cur.execute('DELETE FROM pharmacy_special_order WHERE id = %s AND pharmacy_service_id = %s', (task_id, pharmacy_id))
+        mysql.connection.commit()
+
+        return jsonify({'success': True, 'message': 'Medicine added to pharmacy and removed from special orders'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
