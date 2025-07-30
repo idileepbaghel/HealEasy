@@ -62,7 +62,9 @@ def generate_bill_post():
         print(f"Medicine IDs: {medicine_ids}")
         print(f"Quantities: {quantities}")
         print(f"Amounts: {amounts}")
-        print(f"Net Amounts: {net_amounts}")        # Initialize the response structure
+        print(f"Net Amounts: {net_amounts}")
+        
+        # Initialize the response structure
         response_data = {
             "username": str(session.get('username')), 
             "items": [],
@@ -83,6 +85,9 @@ def generate_bill_post():
         total_discount = 0.0
         total_net_amount = 0.0
         subtotal_amount = 0.0
+        
+        # Stock reduction items
+        stock_reduction_items = []
 
         # Process each medicine entry
         for i in range(len(medicine_ids)):
@@ -126,6 +131,12 @@ def generate_bill_post():
                     
                     response_data["items"].append(medicine_entry)
                     
+                    # Add to stock reduction list
+                    stock_reduction_items.append({
+                        "medicine_id": medicine_ids[i],
+                        "quantity": int(float(quantities[i]))
+                    })
+                    
                     # Update totals
                     total_cgst += cgst_amount
                     total_sgst += sgst_amount
@@ -153,6 +164,25 @@ def generate_bill_post():
         print(json.dumps(response_data, indent=2))
         print("=== END OF RESPONSE ===\n")
 
+        # Reduce stock quantities
+        if stock_reduction_items:
+            try:
+                # Call our stock reduction API
+                stock_reduction_response = requests.post(
+                    url_for('billing.reduce_medicine_stock', _external=True),
+                    json={"items": stock_reduction_items},
+                    headers={'Content-Type': 'application/json'},
+                    cookies=request.cookies  # Forward cookies to maintain session
+                )
+                
+                if not stock_reduction_response.ok:
+                    print(f"Stock reduction failed: {stock_reduction_response.text}")
+                    # You might want to handle this error, potentially rolling back the bill
+                else:
+                    print("Stock reduction successful")
+            except Exception as e:
+                print(f"Error reducing stock: {str(e)}")
+        
         url = os.getenv('BILLING_API_URL')
         api_key = os.getenv('BILLING_API_KEY')
         
@@ -172,14 +202,12 @@ def generate_bill_post():
         if api_response.status_code == 200:
             print(api_response.json()['redirect_url'])
             return redirect(api_response.json()['redirect_url'])
-                # print(f"API Response Status: {api_response.status_code}")
-                # if api_response.status_code == 200:
-                #     print("API Response:", api_response.json())
         else:
             print("API Response Text:", api_response.text)
             return api_response.text
 
     else:
+        # Existing GET route code...
         """Route to display billing form and fetch medicine data"""
         cur = mysql.connection.cursor()
         cur.execute("""
@@ -197,6 +225,9 @@ def generate_bill_post():
         med_names = cur.fetchall()
         cur.close()
         return render_template('billing.html', med_names=med_names)
+    
+
+
 
 @billing.route('/api/get_medicine_details/<int:medicine_id>', methods=['GET'])
 def get_medicine_details(medicine_id):
@@ -259,75 +290,77 @@ def get_medicine_details(medicine_id):
     finally:
         cur.close()
 
-@billing.route('/api/validate_quantity', methods=['POST'])
-def validate_quantity():
-    """API endpoint to validate medicine quantity"""
+@billing.route('/api/validate_stock', methods=['POST'])
+def validate_stock():
+    """
+    Validate if there's enough stock for all items before generating a bill
+    """
+    if 'user' not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+    
+    pharmacy_id = session['user'].get('pharmacy_service_id')
+    data = request.get_json()
+    
+    if not data or 'items' not in data:
+        return jsonify({"success": False, "message": "Invalid data format"}), 400
+    
+    items = data['items']
+    cur = mysql.connection.cursor()
+    
+    warnings = []
+    
     try:
-        data = request.get_json()
-        medicine_id = data.get('medicine_id')
-        quantity = int(data.get('quantity', 0))
-        print(quantity,'qua')
-
-        if not all([medicine_id, quantity]):
-            return jsonify({
-                'success': False,
-                'message': 'Missing required fields'
-            }), 400
+        for item in items:
+            medicine_id = item.get('medicine_id')
+            quantity = int(item.get('quantity', 0))
             
-        # Get the pharmacy_medicine_id from pharmacy_ratelist
-        cur = mysql.connection.cursor()
-        try:
-            # First, check if the medicine exists and get its pharmacy_medicine_id
+            if not medicine_id or not quantity:
+                warnings.append(f"Invalid item data: {item}")
+                continue
+            
+            # Get pharmacy_medicine_id from the ratelist
             cur.execute("""
-                SELECT pharmacy_medicine_id
-                FROM pharmacy_ratelist
-                WHERE id = %s
+                SELECT pr.pharmacy_medicine_id, pr.ratelist_name
+                FROM pharmacy_ratelist pr
+                WHERE pr.id = %s
             """, (medicine_id,))
             
             result = cur.fetchone()
             if not result or not result['pharmacy_medicine_id']:
-                return jsonify({
-                    'success': False,
-                    'message': 'Medicine not found or not properly linked to inventory'
-                }), 404
+                warnings.append(f"Medicine ID {medicine_id} not found in ratelist or not linked to inventory")
+                continue
                 
             pharmacy_medicine_id = result['pharmacy_medicine_id']
+            medicine_name = result['ratelist_name']
             
-            # Check available quantity in stock
+            # Get total available quantity
             cur.execute("""
-                SELECT SUM(COALESCE(quantity, 0)) as available_quantity
-                FROM pharmacy_stock
-                WHERE pharmacy_medicine_id = %s
-            """, (pharmacy_medicine_id,))
+                SELECT SUM(quantity) as total_quantity
+                FROM pharmacy_stock 
+                WHERE pharmacy_medicine_id = %s AND pharmacy_id = %s AND quantity > 0
+            """, (pharmacy_medicine_id, pharmacy_id))
             
             stock_result = cur.fetchone()
-            available_quantity = int(stock_result['available_quantity']) if stock_result and stock_result['available_quantity'] else 0
-            print(available_quantity,'ghdgf')
+            available = int(stock_result['total_quantity']) if stock_result and stock_result['total_quantity'] else 0
             
-            if quantity > available_quantity:
-                # Return a warning message with available quantity
-                return jsonify({
-                    'success': False,
-                    'valid': False,
-                    'message': f'Warning: Cannot select quantity more than available stock. Only {available_quantity} units available.',
-                    'available_quantity': available_quantity
-                })
-                
+            if available < quantity:
+                warnings.append(f"{medicine_name}: Requested {quantity} units but only {available} available")
+        
+        if warnings:
             return jsonify({
-                'success': True,
-                'valid': True,
-                'available_quantity': available_quantity,
-                'message': f'Available stock: {available_quantity} units'
+                "success": False,
+                "warnings": warnings
             })
             
-        finally:
-            cur.close()
-
-    except Exception as e:
         return jsonify({
-            'success': False,
-            'message': f'Error validating quantity: {str(e)}'
-        }), 500
+            "success": True,
+            "message": "Stock is available for all items"
+        })
+    
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error: {str(e)}"}), 500
+    finally:
+        cur.close()
 
 @billing.route('/api/calculate_bill', methods=['POST'])
 def calculate_bill():
@@ -503,3 +536,105 @@ def print_bill_format():
             "success": False,
             "message": f"Error formatting bill data: {str(e)}"
         }), 500
+    
+
+
+@billing.route('/reduce-medicine-stock', methods=['POST'])
+def reduce_medicine_stock():
+    """
+    Reduce the stock quantity when medicines are sold in a bill
+    """
+    if 'user' not in session:
+        return jsonify({"success": False, "message": "Not authenticated"}), 401
+    
+    pharmacy_id = session['user'].get('pharmacy_service_id')
+    data = request.get_json()
+    
+    if not data or 'items' not in data:
+        return jsonify({"success": False, "message": "Invalid data format"}), 400
+    
+    items = data['items']
+    cur = mysql.connection.cursor()
+    
+    success_count = 0
+    errors = []
+    
+    try:
+        for item in items:
+            medicine_id = item.get('medicine_id')
+            quantity = int(item.get('quantity', 0))
+            
+            if not medicine_id or not quantity:
+                errors.append(f"Invalid item data: {item}")
+                continue
+            
+            # Get pharmacy_medicine_id from the ratelist
+            cur.execute("""
+                SELECT pharmacy_medicine_id
+                FROM pharmacy_ratelist
+                WHERE id = %s
+            """, (medicine_id,))
+            
+            result = cur.fetchone()
+            if not result or not result['pharmacy_medicine_id']:
+                errors.append(f"Medicine ID {medicine_id} not found in ratelist or not linked to inventory")
+                continue
+                
+            pharmacy_medicine_id = result['pharmacy_medicine_id']
+            
+            # Get current stock details to update correctly (FIFO order - oldest stock first)
+            cur.execute("""
+                SELECT id, quantity, batch_number, expiry_date 
+                FROM pharmacy_stock 
+                WHERE pharmacy_medicine_id = %s AND pharmacy_id = %s AND quantity > 0
+                ORDER BY expiry_date ASC
+            """, (pharmacy_medicine_id, pharmacy_id))
+            
+            stock_records = cur.fetchall()
+            
+            if not stock_records:
+                errors.append(f"No available stock for medicine ID {medicine_id}")
+                continue
+            
+            remaining_quantity = quantity
+            
+            # Reduce from each batch until quantity is fulfilled
+            for record in stock_records:
+                if remaining_quantity <= 0:
+                    break
+                    
+                stock_id = record['id']
+                available = record['quantity']
+                
+                # Calculate how much to take from this batch
+                to_reduce = min(remaining_quantity, available)
+                new_quantity = available - to_reduce
+                
+                # Update the stock
+                cur.execute("""
+                    UPDATE pharmacy_stock 
+                    SET quantity = %s
+                    WHERE id = %s
+                """, (new_quantity, stock_id))
+                
+                remaining_quantity -= to_reduce
+            
+            if remaining_quantity > 0:
+                errors.append(f"Insufficient stock for medicine ID {medicine_id}. Requested: {quantity}, Reduced: {quantity - remaining_quantity}")
+            else:
+                success_count += 1
+        
+        # Commit all changes if everything processed
+        mysql.connection.commit()
+        
+        return jsonify({
+            "success": True, 
+            "message": f"Stock updated successfully for {success_count} medicines",
+            "errors": errors if errors else None
+        })
+    
+    except Exception as e:
+        mysql.connection.rollback()
+        return jsonify({"success": False, "message": f"Error: {str(e)}"}), 500
+    finally:
+        cur.close()
